@@ -908,44 +908,134 @@ const DIMENSION_DETAIL = {
   preparation: {
     label: "Preparation",
     what: "How deliberately you prime your mind before training begins.",
-    high: { read: "You're consistently entering sessions with a clear purpose. That pre-session clarity isn't a small thing — it's the difference between training and practicing. Athletes who set specific intentions before they start learn faster because their brain knows what to filter for. Keep it specific, keep it writeable.", action: "Push your intention further: not just what you'll work on, but what 'doing it well' will look like in that session. Raise the bar on your own standard." },
-    mid:  { read: "You're setting intentions some of the time — but not consistently enough for it to compound. Preparation only works when it becomes automatic. The sessions where you didn't prepare are the sessions where you defaulted to habit instead of growth.", action: "Before your next session, write your intention down — even one sentence. The act of writing it makes it real. Check back at the end and see if you followed through." },
-    low:  { read: "You're entering sessions without a clear target, which means your effort isn't being directed — it's just being spent. Volume without intention builds habits, not skills. You can work extremely hard and get extremely average results if you're not training toward something specific.", action: "Before your next session, answer one question out loud: what specifically will I do differently today than I did last time? If you can't answer it, you're not ready to start." },
+    high: {
+      read: (s) => "You're consistently entering sessions with a clear purpose. That pre-session clarity isn't a small thing — it's the difference between training and practicing. Athletes who set specific intentions before they start learn faster because their brain knows what to filter for. Keep it specific, keep it writeable." +
+        (s.awareness < 3 ? " One gap worth watching: with your in-session awareness lower this week, that clear intention isn't always being checked against what's actually happening. Preparation and awareness need to work as a pair — one sets the target, the other tracks whether you're hitting it." :
+         s.learning < 3 ? " The next level is converting that preparation into a specific learning target — not just an intention to show up focused, but something measurable you're trying to improve by the end of each session." : ""),
+      action: "Push your intention further: not just what you'll work on, but what 'doing it well' will look like in that session. Raise the bar on your own standard.",
+    },
+    mid: {
+      read: (s) => "You're setting intentions some of the time — but not consistently enough for it to compound. Preparation only works when it becomes automatic. The sessions where you didn't prepare are the sessions where you defaulted to habit instead of growth." +
+        (s.awareness < 3 ? " And without consistent in-session awareness to check your intention against, the sessions where you did prepare may not be translating as much as they could." :
+         s.learning < 3 ? " That also explains your learning score — without a clear upfront intention, there's no defined gap to close during the session." : ""),
+      action: "Before your next session, write your intention down — even one sentence. The act of writing it makes it real. Check back at the end and see if you followed through.",
+    },
+    low: {
+      read: (s) => "You're entering sessions without a clear target, which means your effort isn't being directed — it's just being spent. Volume without intention builds habits, not skills. You can work extremely hard and get extremely average results if you're not training toward something specific." +
+        (s.learning >= 4 ? " There's something worth noting: your learning score was strong this week — meaning you're extracting lessons even without clear upfront preparation. Imagine how much faster that develops when you combine it with a specific intention going in." :
+         s.awareness < 3 ? " With both preparation and awareness low this week, you're entering sessions without a target and without a mid-session check. That's the full loop missing." : ""),
+      action: "Before your next session, answer one question out loud: what specifically will I do differently today than I did last time? If you can't answer it, you're not ready to start.",
+    },
   },
   awareness: {
     label: "Awareness",
     what: "Your ability to detect in real time when something isn't working and adjust.",
-    high: { read: "You have real-time feedback loops running. Noticing what isn't working while it's happening — not after the session, not after the season — is one of the hardest skills to develop. Most athletes need a coach to tell them. You're catching it yourself. That's a genuine edge that compounds over time.", action: "Start tracking what you're catching. After sessions, note what you noticed and what you changed. Patterns in your awareness will tell you where your blind spots still are." },
-    mid:  { read: "You're aware sometimes — but you're catching things after several reps instead of immediately. The gap isn't attention, it's calibration. You haven't yet set a clear enough standard for what 'working' looks like, so it takes longer to detect when you've drifted from it.", action: "Before your next session, define one specific thing to watch for. Not a vague feeling — a concrete marker. 'My hips aren't set before I receive' or 'I'm looking down instead of up.' Give your awareness a target." },
-    low:  { read: "You're completing sessions without detecting what's working and what isn't. That means you could be reinforcing poor patterns without knowing it — and every rep you take without feedback is a rep that locks something in. Awareness is trainable, but only if you practice it intentionally.", action: "Pause once, mid-session — just once. Ask yourself: is what I'm doing right now actually working? Yes or no. Then change something or stay the course. That one pause is the beginning of the skill." },
+    high: {
+      read: (s) => "You have real-time feedback loops running. Noticing what isn't working while it's happening — not after the session, not after the season — is one of the hardest skills to develop. Most athletes need a coach to tell them. You're catching it yourself. That's a genuine edge that compounds over time." +
+        (s.recovery < 3 ? " One gap to close: your recovery score shows that detection isn't always leading to adjustment. You're catching the problem but not always making a specific change on the next rep. Detection without adjustment leaves the feedback loop half-open." :
+         s.presence < 3 ? " One thing to watch: your presence score shows you were mentally elsewhere at times this week. The moments you drifted are the moments your awareness couldn't function — you can only notice what's happening when you're actually there." : ""),
+      action: "Start tracking what you're catching. After sessions, note what you noticed and what you changed. Patterns in your awareness will tell you where your blind spots still are.",
+    },
+    mid: {
+      read: (s) => "You're aware sometimes — but you're catching things after several reps instead of immediately. The gap isn't attention, it's calibration. You haven't yet set a clear enough standard for what 'working' looks like, so it takes longer to detect when you've drifted from it." +
+        (s.presence < 3 ? " Your presence score this week helps explain the gap — when you left the session mentally, your ability to notice what wasn't working went with it. Presence is the precondition for awareness." :
+         s.preparation >= 4 ? " You're entering sessions with clear intentions — that's real. Use those intentions as your awareness anchor: check yourself against the standard you set before you walked in." : ""),
+      action: "Before your next session, define one specific thing to watch for. Not a vague feeling — a concrete marker. Give your awareness a target and it becomes much sharper.",
+    },
+    low: {
+      read: (s) => "You're completing sessions without detecting what's working and what isn't. That means you could be reinforcing poor patterns without knowing it — and every rep you take without feedback is a rep that locks something in. Awareness is trainable, but only if you practice it intentionally." +
+        (s.presence < 3 ? " These two are deeply linked: you can't notice what's happening mid-session if you're not mentally present for it. Presence is the prerequisite — start there." :
+         s.preparation >= 4 ? " You're entering sessions with clear intentions, which is a real foundation. The missing piece is checking those intentions mid-session. You have a target — now learn to track whether you're hitting it." : ""),
+      action: "Pause once, mid-session — just once. Ask yourself: is what I'm doing right now actually working? Yes or no. That one pause is the beginning of the skill.",
+    },
   },
   presence: {
     label: "Presence",
     what: "The degree to which you were mentally engaged, not just physically there.",
-    high: { read: "Your mental engagement this week was strong. You were where your feet were. That kind of presence is increasingly rare — distractions are everywhere and sustaining focus across a full session takes real discipline. The challenge now is maintaining it when conditions aren't ideal: when you're tired, frustrated, or coming off a bad rep.", action: "Notice what your best presence sessions have in common. Time of day, warm-up routine, mindset going in. Start engineering the conditions that make presence easier to access." },
-    mid:  { read: "You drifted in and out this week. Some moments you were fully in it, others your mind was somewhere else entirely. That fluctuation is normal — but it's where development slows, because you only learn in the moments you're actually present for. The moments you drifted, you were logging time without logging growth.", action: "When you notice yourself leaving, don't judge it — just name it. 'I just left.' Then come back. The noticing is the skill. You can't return to something you didn't realize you left." },
-    low:  { read: "You spent significant time this week physically in training but mentally elsewhere. That's one of the most expensive places to be — you're logging hours without logging learning. It also affects teammates. Presence isn't just about your development; it's part of the team's collective environment.", action: "Build a physical reset cue — one specific action that signals your brain to return. A breath, a word, a tap on your leg. Use it every time you catch yourself drifting. Consistency builds the habit." },
+    high: {
+      read: (s) => "Your mental engagement this week was strong. You were where your feet were. That kind of presence is increasingly rare — distractions are everywhere and sustaining focus across a full session takes real discipline. The challenge now is maintaining it when conditions aren't ideal: when you're tired, frustrated, or coming off a bad rep." +
+        (s.recovery < 3 ? " One opportunity to leverage this: when you're as locked in as you were this week, you should also be catching mistakes quickly and adjusting rep-to-rep. Your recovery score has room to grow — and strong presence gives you the platform to do that." :
+         s.awareness >= 4 ? " Your awareness is also high this week — these two are working together. When presence and awareness are both active, you're operating at the highest level of intentional training." : ""),
+      action: "Notice what your best presence sessions have in common. Time of day, warm-up routine, mindset going in. Start engineering the conditions that make presence easier to access.",
+    },
+    mid: {
+      read: (s) => "You drifted in and out this week. Some moments you were fully in it, others your mind was somewhere else entirely. That fluctuation is normal — but it's where development slows, because you only learn in the moments you're actually present for. The moments you drifted, you were logging time without logging growth." +
+        (s.quality < 3 ? " That drift is likely connected to your quality score — it's very hard to prioritize executing well when you're not fully mentally engaged. Presence is the foundation quality is built on." :
+         s.awareness < 3 ? " It also explains the awareness gap — when you drifted, your ability to notice what wasn't working drifted with you." : ""),
+      action: "When you notice yourself leaving, don't judge it — just name it. 'I just left.' Then come back. The noticing is the skill. You can't return to something you didn't realize you left.",
+    },
+    low: {
+      read: (s) => "You spent significant time this week physically in training but mentally elsewhere. That's one of the most expensive places to be — you're logging hours without logging learning. It also affects teammates. Presence isn't just about your development; it's part of the team's collective environment." +
+        (s.quality < 3 ? " Your quality score reflects this directly — the two compound each other. It's nearly impossible to maintain execution standards when your mind has already left the session." :
+         s.awareness < 3 ? " With both presence and awareness low this week, neither of your real-time feedback systems were functioning. You were in training, but not really training." : ""),
+      action: "Build a physical reset cue — one specific action that signals your brain to return. A breath, a word, a tap on your leg. Use it every time you catch yourself drifting. Consistency builds the habit.",
+    },
   },
   learning: {
     label: "Learning",
     what: "Whether you identified a specific gap and deliberately worked to close it.",
-    high: { read: "You completed the full loop this week: identified a gap, set an intention, and deliberately worked on it. That's not common. Most athletes are in motion without being in pursuit of something specific. The compounding effect of doing this consistently over a season — over a career — is enormous.", action: "Keep raising the quality of the gap you're targeting. As you close one, find the next. The goal is to always be working on the thing just at the edge of your current capability." },
-    mid:  { read: "You noticed something this week, but didn't fully pursue it. The noticing is real — that's the hardest part. What's missing is converting observation into deliberate action. There's a gap between 'I know I need to work on this' and 'I specifically practiced this today.'", action: "Make it concrete. Not 'work on my first touch' but 'receive with my body already turned.' The more specific the target, the more useful the rep. Specificity is what turns noticing into learning." },
-    low:  { read: "This week you went through training without identifying a specific gap to close. You put in work, but it wasn't directed at anything in particular. That's maintenance at best — and regression at worst if bad patterns are getting reps. Growth requires a target.", action: "After your next session, spend 90 seconds on this: what is one thing I did today that I want to do differently next time? Write it. Say it out loud. That question, answered honestly, is the beginning of real development." },
+    high: {
+      read: (s) => "You completed the full loop this week: identified a gap, set an intention, and deliberately worked on it. That's not common. Most athletes are in motion without being in pursuit of something specific. The compounding effect of doing this consistently over a season — over a career — is enormous." +
+        (s.preparation < 3 ? " One thing to build on: your preparation score was lower this week, meaning that learning is happening reactively rather than proactively. You're extracting lessons, but without a clear intention going in you're leaving some development on the table." :
+         s.recovery < 3 ? " One layer to add: you're learning across sessions well — that's the macro loop. The micro version of that same skill is recovery: adjusting rep-to-rep within a session. Your recovery score shows room to grow there." : ""),
+      action: "Keep raising the quality of the gap you're targeting. As you close one, find the next. The goal is always to be working at the edge of your current capability.",
+    },
+    mid: {
+      read: (s) => "You noticed something this week, but didn't fully pursue it. The noticing is real — that's the hardest part. What's missing is converting observation into deliberate action. There's a gap between 'I know I need to work on this' and 'I specifically practiced this today.'" +
+        (s.awareness >= 4 ? " Your awareness is strong this week — you're catching things in real time. The gap is in converting those in-session observations into a deliberate practice target for the next session. Close that loop." :
+         s.preparation < 3 ? " It's also harder to learn deliberately when you didn't enter the session with a specific intention. Without a defined target going in, the gap detection becomes reactive rather than systematic." : ""),
+      action: "Make it concrete. Not 'work on my first touch' but 'receive with my body already turned.' Specificity is what turns noticing into learning.",
+    },
+    low: {
+      read: (s) => "This week you went through training without identifying a specific gap to close. You put in work, but it wasn't directed at anything in particular. That's maintenance at best — and regression at worst if bad patterns are getting reps. Growth requires a target." +
+        (s.preparation >= 4 ? " Your preparation score was stronger — you entered sessions with intention, which is the right start. But the learning loop didn't close: effort was directed, but lessons weren't extracted. The full loop is preparation → execution → reflection." :
+         s.awareness < 3 ? " With awareness also lower this week, the detection system that would normally flag what needs to change isn't running. Awareness is the input for learning — without it, there's nothing to act on." : ""),
+      action: "After your next session, spend 90 seconds on this: what is one thing I did today that I want to do differently next time? Write it. Say it out loud. That question, answered honestly, is the beginning of real development.",
+    },
   },
   quality: {
     label: "Quality",
     what: "Whether you prioritized executing well over simply completing the work.",
-    high: { read: "You chose quality over completion this week. That's a harder standard to hold than most people realize — especially when you're tired, behind, or when no one's watching. The athletes who consistently choose quality over quantity are the ones whose reps actually transfer. Every rep you took with real intention this week is a rep that counts.", action: "Now raise the standard again. If quality this week was 8/10, what would 9/10 look like? The goal isn't perfection — it's always working at the edge of your current best." },
-    mid:  { read: "Some sessions this week you locked in on quality. Others you defaulted to completion — finishing the drill, hitting the number, checking the box. That split is where development diverges. The sessions where you chose quality are the ones that contributed to your growth. The others were mostly maintenance.", action: "When you feel yourself defaulting to completion, do fewer reps — not more. One well-executed rep is worth ten automatic ones. Give yourself permission to slow down and do it right." },
-    low:  { read: "This week effort and intentionality weren't aligned. You put in work, but the focus was on getting through it rather than getting something from it. Volume without quality doesn't build skill — it builds automation of whatever you're already doing, good or bad. Hard work in the wrong direction is still the wrong direction.", action: "Choose one drill in your next session and do it at half the normal volume with full attention on every single rep. That session will teach you more than doubling your reps at half the intention." },
+    high: {
+      read: (s) => "You chose quality over completion this week. That's a harder standard to hold than most people realize — especially when you're tired, behind, or when no one's watching. The athletes who consistently choose quality over quantity are the ones whose reps actually transfer. Every rep you took with real intention this week is a rep that counts." +
+        (s.recovery < 3 ? " One place to extend that quality mindset: how you respond to mistakes. Your recovery score shows that after a poor rep, you're not always making a specific adjustment before the next one. The same standard that drives your quality in good reps should drive your response to bad ones." :
+         s.presence >= 4 ? " Your presence was also strong this week — these two are directly connected. When you're mentally engaged, holding a quality standard is significantly easier. You set yourself up well." : ""),
+      action: "Raise the standard again. If quality this week was 8/10, what would 9/10 look like? The goal isn't perfection — it's always working at the edge of your current best.",
+    },
+    mid: {
+      read: (s) => "Some sessions this week you locked in on quality. Others you defaulted to completion — finishing the drill, hitting the number, checking the box. That split is where development diverges. The sessions where you chose quality are the ones that contributed to your growth. The others were mostly maintenance." +
+        (s.presence < 3 ? " The drop in presence likely explains some of that split. In the sessions where you were mentally present, quality was probably higher. Presence is the foundation quality is built on — they move together." :
+         s.preparation >= 4 ? " You're entering sessions with clear intentions — now make quality part of the intention itself. Not just 'work on my positioning' but 'execute my positioning at the highest standard I can, every rep.'" : ""),
+      action: "When you feel yourself defaulting to completion, do fewer reps — not more. One well-executed rep is worth ten automatic ones.",
+    },
+    low: {
+      read: (s) => "This week effort and intentionality weren't aligned. You put in work, but the focus was on getting through it rather than getting something from it. Volume without quality doesn't build skill — it builds automation of whatever you're already doing, good or bad. Hard work in the wrong direction is still the wrong direction." +
+        (s.presence < 3 ? " Your presence score reflects this — it's nearly impossible to maintain a quality standard when you're not mentally in the session. Getting your presence back is the prerequisite for getting your quality back." :
+         s.preparation >= 4 ? " You're entering sessions with clear intentions, which is the right foundation. But quality broke down in execution — meaning the gap is between knowing what to do and holding the standard when it gets difficult." : ""),
+      action: "Choose one drill in your next session and do it at half the normal volume with full attention on every single rep. That session will teach you more than doubling your reps at half the intention.",
+    },
   },
   recovery: {
     label: "Recovery",
     what: "How quickly and specifically you adjusted after a poor rep or play.",
-    high: { read: "After mistakes this week, you made specific adjustments before your next attempt. That's elite-level processing — most athletes either repeat the mistake or overcorrect emotionally. You're closing the feedback loop quickly and moving forward with information instead of frustration. Over a season, that compounds into a measurably faster development rate.", action: "Track what your adjustments actually are. You'll start to notice patterns in your mistakes — and patterns in what fixes them. That data is yours. Use it." },
-    mid:  { read: "You recovered from mistakes sometimes — but your adjustments weren't always specific enough. You reset emotionally, which is good, but you didn't always identify what exactly to change on the next attempt. The result: you moved on, but didn't fully learn from the rep.", action: "Before your next rep after any mistake, name one specific thing you're changing. Say it in your head. Make the adjustment visible to yourself before you execute. The pause is where the learning is." },
-    low:  { read: "After mistakes this week, the pattern was repetition rather than adjustment. That's not a mental weakness — it's a missing habit. Without a deliberate recovery routine, bad reps just accumulate and get practiced. You can't out-effort a loop that keeps repeating itself.", action: "Build a 3-second rule: after any poor rep, take 3 full seconds before the next one. In those 3 seconds, name one thing you're changing. That pause is non-negotiable. It's where the rep becomes information instead of just a mistake." },
+    high: {
+      read: (s) => "After mistakes this week, you made specific adjustments before your next attempt. That's elite-level processing — most athletes either repeat the mistake or overcorrect emotionally. You're closing the feedback loop quickly and moving forward with information instead of frustration. Over a season, that compounds into a measurably faster development rate." +
+        (s.awareness >= 4 ? " Your awareness is also strong this week — these two are working together in a way that's genuinely rare. You're catching problems in real time and adjusting immediately. That combination is where real acceleration happens." :
+         s.learning >= 4 ? " Combined with your strong learning score, you're closing the loop at both the rep level and the session level. That's the full picture of an athlete who is actually developing." : ""),
+      action: "Track what your adjustments actually are. You'll start to notice patterns in your mistakes — and patterns in what fixes them. That data is yours. Use it.",
+    },
+    mid: {
+      read: (s) => "You recovered from mistakes sometimes — but your adjustments weren't always specific enough. You reset emotionally, which is good, but you didn't always identify what exactly to change on the next attempt. The result: you moved on, but didn't fully learn from the rep." +
+        (s.awareness < 3 ? " Your awareness score is connected here — without consistently catching what went wrong in the moment, it's hard to make a specific adjustment on the next rep. Awareness and recovery are sequential: one enables the other." :
+         s.presence < 3 ? " Presence plays a role here too — in the moments you were mentally absent, recovery becomes nearly impossible because you weren't tracking what went wrong in the first place." : ""),
+      action: "Before your next rep after any mistake, name one specific thing you're changing. Say it in your head. Make the adjustment visible to yourself before you execute.",
+    },
+    low: {
+      read: (s) => "After mistakes this week, the pattern was repetition rather than adjustment. That's not a mental weakness — it's a missing habit. Without a deliberate recovery routine, bad reps just accumulate and get practiced. You can't out-effort a loop that keeps repeating itself." +
+        (s.awareness >= 4 ? " Here's something important: your awareness score is strong — you're noticing when things aren't working. The gap is in what happens next. You have the detection; now build the response. Those two together are the full feedback loop." :
+         s.presence < 3 ? " With presence also low this week, recovery becomes even harder — you can't adjust deliberately in a session you've mentally left. Getting present is the prerequisite for everything else." : ""),
+      action: "Build a 3-second rule: after any poor rep, take 3 full seconds before the next one. In those 3 seconds, name one thing you're changing. That pause is where the rep becomes information instead of just a mistake.",
+    },
   },
 };
 
@@ -958,6 +1048,10 @@ function getAdjustedScore(q, answers, idx) {
 function DeepProfileScreen({ score, answers, onBack }) {
   const band = getScoreBand(score);
   const nonPeerQs = QUESTIONS.filter(q => q.type !== "peer");
+
+  const allScores = Object.fromEntries(
+    nonPeerQs.map((q, i) => [q.dimension, getAdjustedScore(q, answers, i)])
+  );
 
   return (
     <div style={{ ...styles.screen, gap: 16 }}>
@@ -1000,7 +1094,7 @@ function DeepProfileScreen({ score, answers, onBack }) {
               <div style={{ height: "100%", width: `${(adjusted / 5) * 100}%`, background: color, borderRadius: 2, transition: "width 0.8s ease" }} />
             </div>
 
-            <div style={{ fontSize: 12, color: COLORS.white, lineHeight: 1.75, fontWeight: 300 }}>{content.read}</div>
+            <div style={{ fontSize: 12, color: COLORS.white, lineHeight: 1.75, fontWeight: 300 }}>{typeof content.read === "function" ? content.read(allScores) : content.read}</div>
 
             <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: 12, display: "flex", flexDirection: "column", gap: 6 }}>
               <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color, letterSpacing: 2 }}>THIS WEEK'S ACTION</div>
