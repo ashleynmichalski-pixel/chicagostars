@@ -541,6 +541,16 @@ function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey }) {
                   </div>
                 ))}
               </div>
+              <div style={{ display: "flex", gap: 14, marginTop: 6 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: 2, background: COLORS.sky + "99", flexShrink: 0 }} />
+                  <div style={{ fontSize: 9, color: COLORS.muted, fontFamily: "'DM Mono', monospace" }}>INTENTIONALITY</div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: 2, background: COLORS.red + "99", flexShrink: 0 }} />
+                  <div style={{ fontSize: 9, color: COLORS.muted, fontFamily: "'DM Mono', monospace" }}>STRUGGLE (LOWER = BETTER)</div>
+                </div>
+              </div>
               {teamData.avgTeamEnergy && (
                 <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: 12, marginTop: 4 }}>
                   <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: "#F5A623", letterSpacing: 2, marginBottom: 8 }}>TEAM ENERGY PERCEPTION</div>
@@ -564,6 +574,11 @@ function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey }) {
                   </div>
                 );
               })()}
+              <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: 10, marginTop: 4 }}>
+                <div style={{ fontSize: 10, color: "#4A6580", lineHeight: 1.6 }}>
+                  Team data resets each week as new check-ins come in. As the season builds, your individual history above will show how your scores track week over week.
+                </div>
+              </div>
             </div>
           )}
         </div>
