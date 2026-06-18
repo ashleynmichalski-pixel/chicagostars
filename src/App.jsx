@@ -7,7 +7,7 @@ import {
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const ADMIN_PASSWORD = "StarsIntent2026";
-const MIN_SUBMISSIONS_TO_UNLOCK = 5;
+const MIN_SUBMISSIONS_TO_UNLOCK = 3;
 const MAX_ROSTER = 25;
 
 const COLORS = {
@@ -34,12 +34,13 @@ const QUESTIONS = [
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────────────
-function getParticipationNote(count, total) {
+function getParticipationNote(count, total, showCount = true) {
   const pct = count / total;
-  if (pct >= 0.8) return { text: `${count} of ${total} athletes responded — high participation. This is a reliable read on where the team is this week.`, color: COLORS.sky };
-  if (pct >= 0.5) return { text: `${count} of ${total} athletes responded — solid sample. This reflects a meaningful portion of the team but isn't the full picture.`, color: COLORS.sky };
-  if (pct >= 0.3) return { text: `${count} of ${total} athletes responded — partial data. Directionally useful, but about half the team hasn't weighed in yet.`, color: "#F5A623" };
-  return { text: `${count} of ${total} athletes responded — small sample. Treat this as an early signal only, not a team-wide read.`, color: "#F5A623" };
+  const prefix = showCount ? `${count} of ${total} athletes responded — ` : "";
+  if (pct >= 0.8) return { text: `${prefix}High participation. This is a reliable read on where the team is this week.`, color: COLORS.sky };
+  if (pct >= 0.5) return { text: `${prefix}Solid sample. This reflects a meaningful portion of the team but isn't the full picture.`, color: COLORS.sky };
+  if (pct >= 0.3) return { text: `${prefix}Partial data. Directionally useful, but not the full team yet.`, color: "#F5A623" };
+  return { text: `${prefix}Early data. Treat this as an initial signal — more check-ins are still coming in.`, color: "#F5A623" };
 }
 
 function getTeamSummary(avgScore, avgPerQ) {
@@ -523,7 +524,7 @@ function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey }) {
                 </div>
               </div>
               {(() => {
-                const note = getParticipationNote(teamData.count, MAX_ROSTER);
+                const note = getParticipationNote(teamData.count, MAX_ROSTER, false);
                 return (
                   <div style={{ fontSize: 11, color: note.color, lineHeight: 1.55, background: note.color + "15", borderRadius: 8, padding: "8px 10px" }}>
                     {note.text}
