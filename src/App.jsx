@@ -159,6 +159,31 @@ const styles = {
 };
 
 // ── Sub-components ─────────────────────────────────────────────────────────
+function Sparkline({ history }) {
+  if (history.length < 2) return null;
+  const sorted = [...history].sort((a, b) => a.weekNum - b.weekNum);
+  const W = 100, H = 28, pad = 3;
+  const pts = sorted.map((h, i) => {
+    const x = pad + (i / (sorted.length - 1)) * (W - pad * 2);
+    const y = H - pad - (h.score / 30) * (H - pad * 2);
+    return `${x},${y}`;
+  }).join(" ");
+  const last = sorted[sorted.length - 1];
+  const prev = sorted[sorted.length - 2];
+  const trending = last.score >= prev.score;
+  const color = trending ? COLORS.sky : COLORS.red;
+  return (
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: "block", height: 28 }}>
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.7" />
+      {sorted.map((h, i) => {
+        const x = pad + (i / (sorted.length - 1)) * (W - pad * 2);
+        const y = H - pad - (h.score / 30) * (H - pad * 2);
+        return <circle key={i} cx={x} cy={y} r={i === sorted.length - 1 ? 2.5 : 1.5} fill={i === sorted.length - 1 ? color : color + "88"} />;
+      })}
+    </svg>
+  );
+}
+
 function StarLogo({ size = 28 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
@@ -489,7 +514,10 @@ function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey }) {
 
       {history.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.muted, letterSpacing: 3 }}>YOUR HISTORY</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.muted, letterSpacing: 3 }}>YOUR HISTORY</div>
+            <div style={{ width: 80 }}><Sparkline history={history} /></div>
+          </div>
           {[...history].sort((a, b) => b.weekNum - a.weekNum).map((h) => {
             const isOpen = expandedWeek === h.week;
             const detail = weekDetails[h.week];
@@ -548,6 +576,7 @@ function AssessmentScreen({ playerNum, weekKey, onComplete }) {
   const [note, setNote] = useState("");
   const [showNote, setShowNote] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
 
   const q = QUESTIONS[current];
   const isLast = current === QUESTIONS.length - 1;
@@ -565,15 +594,17 @@ function AssessmentScreen({ playerNum, weekKey, onComplete }) {
 
   const handleSubmit = async () => {
     setSubmitting(true);
+    setSubmitError(null);
     const score = computeIntentScore(answers);
     const weekNum = parseInt(weekKey.split("W")[1]);
-    await saveSubmission({
-      weekKey,
-      playerNum,
-      answers: answers.map(a => a ?? 0),
-      score,
-      weekNum,
+    const { error } = await saveSubmission({
+      weekKey, playerNum, answers: answers.map(a => a ?? 0), score, weekNum,
     });
+    if (error) {
+      setSubmitting(false);
+      setSubmitError("You've already submitted this week. Come back next week!");
+      return;
+    }
     if (note.trim()) saveNote(playerNum, weekKey, note.trim());
     setSubmitting(false);
     onComplete(score, answers);
@@ -595,11 +626,12 @@ function AssessmentScreen({ playerNum, weekKey, onComplete }) {
           />
         </div>
         <div style={{ flex: 1 }} />
+        {submitError && <div style={{ fontSize: 12, color: COLORS.sky, textAlign: "center", lineHeight: 1.6, background: COLORS.sky + "15", borderRadius: 10, padding: "10px 14px" }}>{submitError}</div>}
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <Btn onClick={handleSubmit} disabled={submitting}>
+          <Btn onClick={handleSubmit} disabled={submitting || !!submitError}>
             {submitting ? "Submitting..." : "Submit & See My Score →"}
           </Btn>
-          <Btn onClick={handleSubmit} variant="secondary" disabled={submitting}>Skip Note</Btn>
+          <Btn onClick={handleSubmit} variant="secondary" disabled={submitting || !!submitError}>Skip Note</Btn>
         </div>
       </div>
     );
@@ -656,11 +688,12 @@ function AssessmentScreen({ playerNum, weekKey, onComplete }) {
 }
 
 // ── SCREEN: Score Reveal ───────────────────────────────────────────────────
-function ScoreRevealScreen({ score, answers, onViewProfile }) {
+function ScoreRevealScreen({ score, answers, prevScore, onViewProfile }) {
   const [displayed, setDisplayed] = useState(0);
   const band = getScoreBand(score);
   const summary = getSummaryContent(score, answers);
   const pct = (score / 30) * 100;
+  const delta = prevScore !== null && prevScore !== undefined ? score - prevScore : null;
 
   useEffect(() => {
     let frame;
@@ -696,7 +729,32 @@ function ScoreRevealScreen({ score, answers, onViewProfile }) {
         </div>
       </div>
 
-      <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, letterSpacing: 4, color: band.color, fontWeight: 700 }}>{band.label}</div>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+        <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 14, letterSpacing: 4, color: band.color, fontWeight: 700 }}>{band.label}</div>
+        {delta !== null && (
+          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: delta > 0 ? COLORS.sky : delta < 0 ? COLORS.red : COLORS.muted, letterSpacing: 1 }}>
+            {delta > 0 ? `▲ +${delta}` : delta < 0 ? `▼ ${delta}` : `— same`} from last week
+          </div>
+        )}
+      </div>
+
+      {/* Dimension breakdown */}
+      <div style={{ background: COLORS.dim, border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: 20, width: "100%", display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.muted, letterSpacing: 3, marginBottom: 2 }}>YOUR DIMENSIONS</div>
+        {QUESTIONS.filter(q => q.type !== "peer").map((q, i) => {
+          const raw = answers[i] ?? 0;
+          const adjusted = q.type === "struggle" && !q.reversed ? 6 - raw : raw;
+          return (
+            <div key={q.id} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <div style={{ fontSize: 9, color: COLORS.muted, width: 72, flexShrink: 0, fontFamily: "'DM Mono', monospace", letterSpacing: 1 }}>{q.dimension.toUpperCase()}</div>
+              <div style={{ flex: 1, height: 5, background: COLORS.navyDark, borderRadius: 3 }}>
+                <div style={{ height: "100%", width: `${(adjusted / 5) * 100}%`, background: adjusted >= 4 ? COLORS.sky : adjusted >= 3 ? "#F5A623" : COLORS.red, borderRadius: 3, transition: "width 1s ease" }} />
+              </div>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: COLORS.white, width: 12, textAlign: "right" }}>{adjusted}</div>
+            </div>
+          );
+        })}
+      </div>
 
       <div style={{ background: COLORS.dim, border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: 20, width: "100%", display: "flex", flexDirection: "column", gap: 14 }}>
         <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.muted, letterSpacing: 3 }}>THIS WEEK'S READ</div>
@@ -811,10 +869,23 @@ function AdminDashboard({ onBack }) {
         <>
           <div style={{ background: COLORS.dim, border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: 20 }}>
             <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.sky, letterSpacing: 3, marginBottom: 16 }}>WEEK {weekNum} — CURRENT</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 16 }}>
-              {[["Submitted", `${data.count}/${MAX_ROSTER}`], ["Completion", `${data.completionPct}%`], ["Team Avg", `${data.avgScore}/30`]].map(([label, val]) => (
-                <div key={label} style={{ textAlign: "center" }}>
-                  <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, color: COLORS.sky, fontWeight: 700 }}>{val}</div>
+            {/* Roster completion progress */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+                <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 32, color: COLORS.white, fontWeight: 700, lineHeight: 1 }}>
+                  {data.count}<span style={{ fontSize: 16, color: COLORS.muted, fontWeight: 400 }}>/{MAX_ROSTER}</span>
+                  <span style={{ fontSize: 14, color: COLORS.muted, fontWeight: 400, marginLeft: 8 }}>submitted</span>
+                </div>
+                <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, color: data.completionPct >= 80 ? COLORS.sky : data.completionPct >= 50 ? "#F5A623" : COLORS.muted, fontWeight: 700 }}>{data.completionPct}%</div>
+              </div>
+              <div style={{ height: 8, background: COLORS.navyDark, borderRadius: 4 }}>
+                <div style={{ height: "100%", width: `${data.completionPct}%`, background: data.completionPct >= 80 ? COLORS.sky : data.completionPct >= 50 ? "#F5A623" : COLORS.muted, borderRadius: 4, transition: "width 0.8s" }} />
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
+              {[["Team Avg", `${data.avgScore}/30`], ["Avg Band", getScoreBand(data.avgScore).label.split(" ")[0]]].map(([label, val]) => (
+                <div key={label} style={{ textAlign: "center", background: COLORS.navyDark, borderRadius: 10, padding: "12px 8px" }}>
+                  <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 22, color: COLORS.sky, fontWeight: 700 }}>{val}</div>
                   <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 8, color: COLORS.muted, letterSpacing: 1 }}>{label}</div>
                 </div>
               ))}
@@ -958,9 +1029,12 @@ export default function IntentScore() {
   };
 
   const handleAssessmentComplete = async (score, answers) => {
+    const prevScore = history.length > 0
+      ? [...history].sort((a, b) => b.weekNum - a.weekNum)[0].score
+      : null;
     const hist = await getPlayerHistory(playerNum);
     setHistory(hist);
-    setResultData({ score, answers });
+    setResultData({ score, answers, prevScore });
     setView("result");
   };
 
@@ -979,7 +1053,7 @@ export default function IntentScore() {
           {view === "entry" && <NumberEntry onEnter={handleNumberEntered} />}
           {view === "profile" && <ProfileScreen playerNum={playerNum} history={history} weekKey={weekKey} onTakeAssessment={() => { if (!alreadySubmitted) setView("assessment"); }} />}
           {view === "assessment" && <AssessmentScreen playerNum={playerNum} weekKey={weekKey} onComplete={handleAssessmentComplete} />}
-          {view === "result" && resultData && <ScoreRevealScreen score={resultData.score} answers={resultData.answers} onViewProfile={() => setView("profile")} />}
+          {view === "result" && resultData && <ScoreRevealScreen score={resultData.score} answers={resultData.answers} prevScore={resultData.prevScore} onViewProfile={() => setView("profile")} />}
           {view === "admin-login" && <AdminLogin onLogin={() => setView("admin")} />}
           {view === "admin" && <AdminDashboard onBack={() => setView(playerNum ? "profile" : "returning")} />}
         </div>

@@ -21,13 +21,14 @@ export async function registerPlayer(playerNum) {
 }
 
 export async function saveSubmission({ weekKey, playerNum, answers, score, weekNum }) {
-  await supabase.from("submissions").insert({
+  const { error } = await supabase.from("submissions").insert({
     week_key: weekKey,
     player_num: playerNum,
     answers: answers.map((a) => a ?? 0),
     score,
     week_num: weekNum,
   });
+  return { error };
 }
 
 export async function getPlayerHistory(playerNum) {
