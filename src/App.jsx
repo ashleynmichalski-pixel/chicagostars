@@ -42,6 +42,34 @@ function getParticipationNote(count, total) {
   return { text: `${count} of ${total} athletes responded — small sample. Treat this as an early signal only, not a team-wide read.`, color: "#F5A623" };
 }
 
+function getTeamSummary(avgScore, avgPerQ) {
+  const dims = QUESTIONS.map((q, i) => {
+    const val = parseFloat(avgPerQ[i]) || 0;
+    const adjusted = q.type === "struggle" && !q.reversed ? 5 - val : val;
+    return { dimension: q.dimension, score: adjusted };
+  });
+  dims.sort((a, b) => a.score - b.score);
+  const weak = dims[0].dimension;
+  const weakLabel = weak.charAt(0).toUpperCase() + weak.slice(1);
+
+  if (avgScore >= 24) return {
+    color: COLORS.sky,
+    text: `As a group, the team brought real intention to training this week. The data reflects a collective that is actively engaging — not just putting in time. The shared area with the most room to grow: ${weakLabel}. That's where the team's next level lives.`,
+  };
+  if (avgScore >= 18) return {
+    color: COLORS.sky,
+    text: `The team is trending in the right direction, but there's a gap between intention and execution at the group level. Some athletes are locking in consistently; others aren't fully there yet. ${weakLabel} is where that gap is widest across the team.`,
+  };
+  if (avgScore >= 12) return {
+    color: "#F5A623",
+    text: `The team's intentionality was uneven this week. The data shows a split — some athletes brought real focus, others went through the motions. That inconsistency at the group level is worth addressing directly. ${weakLabel} needs collective attention.`,
+  };
+  return {
+    color: COLORS.red,
+    text: `As a group, this was not an intentional week — the data is clear. This isn't just about individual effort; it's about whether the team's collective environment is driving focus in training. ${weakLabel} is where the biggest gap sits.`,
+  };
+}
+
 function getWeekKey() {
   const now = new Date();
   const jan1 = new Date(now.getFullYear(), 0, 1);
@@ -427,6 +455,15 @@ function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey }) {
                   <div style={{ fontSize: 11, color: COLORS.muted, marginTop: 6, lineHeight: 1.5 }}>How athletes perceived the team's collective focus this week.</div>
                 </div>
               )}
+              {(() => {
+                const ts = getTeamSummary(teamData.avgScore, teamData.avgPerQ);
+                return (
+                  <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: 14, marginTop: 4 }}>
+                    <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: ts.color, letterSpacing: 2, marginBottom: 8 }}>THIS WEEK'S TEAM READ</div>
+                    <div style={{ fontSize: 12, color: COLORS.white, lineHeight: 1.7, fontWeight: 300 }}>{ts.text}</div>
+                  </div>
+                );
+              })()}
             </div>
           )}
         </div>
@@ -770,6 +807,15 @@ function AdminDashboard({ onBack }) {
                 </div>
               </div>
             )}
+            {(() => {
+              const ts = getTeamSummary(data.avgScore, data.avgPerQ);
+              return (
+                <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: 14, marginTop: 8 }}>
+                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: ts.color, letterSpacing: 2, marginBottom: 8 }}>THIS WEEK'S TEAM READ</div>
+                  <div style={{ fontSize: 12, color: COLORS.white, lineHeight: 1.7, fontWeight: 300 }}>{ts.text}</div>
+                </div>
+              );
+            })()}
           </div>
 
           {allWeeks.length > 1 && (
