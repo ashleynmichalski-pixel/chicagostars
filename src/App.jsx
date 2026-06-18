@@ -453,8 +453,16 @@ function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey }) {
         <div style={{ background: COLORS.sky + "18", border: `1px solid ${COLORS.sky}44`, borderRadius: 12, padding: "12px 14px", display: "flex", gap: 10, alignItems: "flex-start", marginTop: 12 }}>
           <div style={{ fontSize: 16, flexShrink: 0 }}>📲</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12, color: COLORS.white, fontWeight: 500, marginBottom: 2 }}>Add to your home screen</div>
-            <div style={{ fontSize: 11, color: COLORS.muted, lineHeight: 1.5 }}>Tap Share → Add to Home Screen for quick weekly access.</div>
+            <div style={{ fontSize: 12, color: COLORS.white, fontWeight: 500, marginBottom: 4 }}>Add to your home screen</div>
+            {/android/i.test(navigator.userAgent) ? (
+              <div style={{ fontSize: 11, color: COLORS.muted, lineHeight: 1.6 }}>
+                Tap the <span style={{ color: COLORS.white }}>⋮ three dots</span> in the top right of your browser → <span style={{ color: COLORS.white }}>Add to Home Screen</span>
+              </div>
+            ) : (
+              <div style={{ fontSize: 11, color: COLORS.muted, lineHeight: 1.6 }}>
+                Tap the <span style={{ color: COLORS.white }}>· · · three dots</span> next to the URL → <span style={{ color: COLORS.white }}>Add to Home Screen</span>
+              </div>
+            )}
           </div>
           <button onClick={dismissAths} style={{ background: "none", border: "none", color: COLORS.muted, fontSize: 16, cursor: "pointer", padding: 0, lineHeight: 1, flexShrink: 0 }}>✕</button>
         </div>
