@@ -306,13 +306,16 @@ function NumberEntry({ onEnter, onSwitchToLogin }) {
           </div>
         )}
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-          {[1,2,3,4,5,6,7,8,9].map(d => (
-            <button key={d} onClick={() => handleDigit(String(d))} style={styles.numBtn}>{d}</button>
-          ))}
-          <div />
-          <button onClick={() => handleDigit("0")} style={styles.numBtn}>0</button>
-          <button onClick={handleBack} style={{ ...styles.numBtn, color: COLORS.muted }}>⌫</button>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+            {[1,2,3,4,5,6,7,8,9].map(d => (
+              <button key={d} onClick={() => handleDigit(String(d))} style={styles.numBtn}>{d}</button>
+            ))}
+            <div />
+            <button onClick={() => handleDigit("0")} style={styles.numBtn}>0</button>
+            <div />
+          </div>
+          <button onClick={handleBack} style={{ ...styles.numBtn, width: "100%", color: COLORS.muted, fontSize: 20 }}>⌫ delete</button>
         </div>
 
         <div style={{ fontSize: 11, color: "#4A6580", textAlign: "center", lineHeight: 1.6 }}>
@@ -366,13 +369,16 @@ function ReturningEntry({ onEnter, onNewNumber, initialNum = "" }) {
 
         {error && <div style={{ fontSize: 12, color: COLORS.red, textAlign: "center" }}>{error}</div>}
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-          {[1,2,3,4,5,6,7,8,9].map(d => (
-            <button key={d} onClick={() => handleDigit(String(d))} style={styles.numBtn}>{d}</button>
-          ))}
-          <div />
-          <button onClick={() => handleDigit("0")} style={styles.numBtn}>0</button>
-          <button onClick={handleBack} style={{ ...styles.numBtn, color: COLORS.muted }}>⌫</button>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+            {[1,2,3,4,5,6,7,8,9].map(d => (
+              <button key={d} onClick={() => handleDigit(String(d))} style={styles.numBtn}>{d}</button>
+            ))}
+            <div />
+            <button onClick={() => handleDigit("0")} style={styles.numBtn}>0</button>
+            <div />
+          </div>
+          <button onClick={handleBack} style={{ ...styles.numBtn, width: "100%", color: COLORS.muted, fontSize: 20 }}>⌫ delete</button>
         </div>
       </div>
 
@@ -895,6 +901,10 @@ function ScoreRevealScreen({ score, answers, prevScore, onViewProfile, onDeepPro
         </div>
       </div>
 
+      <div style={{ fontSize: 10, color: "#4A6580", textAlign: "center", lineHeight: 1.6, paddingTop: 4 }}>
+        Insights are AI-generated based on your responses and may not reflect complete accuracy. Use as a starting point for reflection.
+      </div>
+
       <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
         <Btn onClick={onDeepProfile}>View In-Depth Profile →</Btn>
         <Btn onClick={onViewProfile} variant="secondary">View My Profile →</Btn>
@@ -1103,6 +1113,10 @@ function DeepProfileScreen({ score, answers, onBack }) {
           </div>
         );
       })}
+
+      <div style={{ fontSize: 10, color: "#4A6580", textAlign: "center", lineHeight: 1.6 }}>
+        Insights are AI-generated based on your responses and may not reflect complete accuracy. Use as a starting point for reflection.
+      </div>
 
       <Btn onClick={onBack} variant="secondary">← Back to My Score</Btn>
     </div>
