@@ -248,7 +248,7 @@ function OnboardingScreen({ onContinue }) {
 }
 
 // ── SCREEN: Number Entry (new player) ──────────────────────────────────────
-function NumberEntry({ onEnter }) {
+function NumberEntry({ onEnter, onSwitchToLogin }) {
   const [num, setNum] = useState("");
   const [error, setError] = useState("");
   const [checking, setChecking] = useState(false);
@@ -287,7 +287,16 @@ function NumberEntry({ onEnter }) {
           </div>
         </div>
 
-        {error && <div style={{ fontSize: 12, color: COLORS.red, textAlign: "center", lineHeight: 1.5 }}>{error}</div>}
+        {error && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center" }}>
+            <div style={{ fontSize: 12, color: COLORS.red, textAlign: "center", lineHeight: 1.5 }}>{error}</div>
+            {error.includes("already taken") && (
+              <button onClick={() => onSwitchToLogin(num)} style={{ background: "none", border: "none", color: COLORS.sky, fontSize: 12, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3, fontFamily: "'DM Sans', sans-serif", padding: 0 }}>
+                That's my number — log in instead
+              </button>
+            )}
+          </div>
+        )}
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
           {[1,2,3,4,5,6,7,8,9].map(d => (
@@ -311,8 +320,8 @@ function NumberEntry({ onEnter }) {
 }
 
 // ── SCREEN: Returning Player ───────────────────────────────────────────────
-function ReturningEntry({ onEnter, onNewNumber }) {
-  const [num, setNum] = useState("");
+function ReturningEntry({ onEnter, onNewNumber, initialNum = "" }) {
+  const [num, setNum] = useState(initialNum);
   const [error, setError] = useState("");
   const [checking, setChecking] = useState(false);
 
@@ -997,6 +1006,7 @@ export default function IntentScore() {
   const [playerNum, setPlayerNum] = useState(null);
   const [history, setHistory] = useState([]);
   const [resultData, setResultData] = useState(null);
+  const [prefillNum, setPrefillNum] = useState("");
 
   useEffect(() => {
     async function init() {
@@ -1049,8 +1059,8 @@ export default function IntentScore() {
         <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
           {view === "loading" && <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}><StarLogo size={48} /></div>}
           {view === "onboarding" && <OnboardingScreen onContinue={handleOnboarding} />}
-          {view === "returning" && <ReturningEntry onEnter={handleNumberEntered} onNewNumber={() => setView("entry")} />}
-          {view === "entry" && <NumberEntry onEnter={handleNumberEntered} />}
+          {view === "returning" && <ReturningEntry onEnter={handleNumberEntered} onNewNumber={() => { setPrefillNum(""); setView("entry"); }} initialNum={prefillNum} />}
+          {view === "entry" && <NumberEntry onEnter={handleNumberEntered} onSwitchToLogin={(n) => { setPrefillNum(n); setView("returning"); }} />}
           {view === "profile" && <ProfileScreen playerNum={playerNum} history={history} weekKey={weekKey} onTakeAssessment={() => { if (!alreadySubmitted) setView("assessment"); }} />}
           {view === "assessment" && <AssessmentScreen playerNum={playerNum} weekKey={weekKey} onComplete={handleAssessmentComplete} />}
           {view === "result" && resultData && <ScoreRevealScreen score={resultData.score} answers={resultData.answers} prevScore={resultData.prevScore} onViewProfile={() => setView("profile")} />}
