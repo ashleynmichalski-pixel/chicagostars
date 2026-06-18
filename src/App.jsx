@@ -510,11 +510,8 @@ function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey }) {
           {!teamData ? (
             <div style={{ fontSize: 12, color: COLORS.muted }}>Loading...</div>
           ) : !teamData.unlocked ? (
-            <div style={{ fontSize: 13, color: COLORS.white }}>
-              <span style={{ color: COLORS.sky, fontWeight: 700 }}>{teamData.count}</span> of {MIN_SUBMISSIONS_TO_UNLOCK} needed to unlock team averages.
-              <div style={{ marginTop: 8, height: 4, background: COLORS.navyDark, borderRadius: 2 }}>
-                <div style={{ height: "100%", width: `${(teamData.count / MIN_SUBMISSIONS_TO_UNLOCK) * 100}%`, background: COLORS.sky, borderRadius: 2, transition: "width 0.5s" }} />
-              </div>
+            <div style={{ fontSize: 13, color: COLORS.muted, lineHeight: 1.6 }}>
+              Team results will be available once a few more teammates have checked in. Check back later.
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
