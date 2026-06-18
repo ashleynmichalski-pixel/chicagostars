@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import {
   playerExists, registerPlayer, saveSubmission,
-  getPlayerHistory, getWeekSubmissions, getAllSubmissions,
+  getPlayerHistory, getPlayerFullHistory, getWeekSubmissions, getAllSubmissions,
   resetAllData, saveNote, getPlayerSubmission, getWeekFeedback,
 } from "./lib/db";
 
@@ -392,6 +392,7 @@ function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey }) {
   const [refreshing, setRefreshing] = useState(false);
   const [expandedWeek, setExpandedWeek] = useState(null);
   const [weekDetails, setWeekDetails] = useState({});
+  const [fullHistory, setFullHistory] = useState([]);
   const [showAths, setShowAths] = useState(() => {
     if (typeof window !== "undefined" && window.matchMedia("(display-mode: standalone)").matches) return false;
     return !localStorage.getItem("intentscore_aths_dismissed");
@@ -414,6 +415,10 @@ function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey }) {
       if (sub) setWeekDetails(prev => ({ ...prev, [h.week]: { ...sub, note } }));
     }
   };
+
+  useEffect(() => {
+    getPlayerFullHistory(playerNum).then(setFullHistory);
+  }, [playerNum, history.length]);
 
   useEffect(() => {
     if (!thisWeekDone) return;
@@ -631,6 +636,52 @@ function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey }) {
           })}
         </div>
       )}
+
+      {fullHistory.length >= 2 && (() => {
+        const nonPeerQs = QUESTIONS.filter(q => q.type !== "peer");
+        const dimHistory = nonPeerQs.map(q => ({
+          label: q.dimension.slice(0, 5).toUpperCase(),
+          dimension: q.dimension,
+          weeks: fullHistory.map(h => ({
+            weekNum: h.week_num,
+            score: getAdjustedScore(q, h.answers, QUESTIONS.indexOf(q)),
+          })),
+        }));
+        return (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.muted, letterSpacing: 3 }}>DIMENSION TRENDS</div>
+            <div style={{ background: COLORS.dim, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+              {dimHistory.map(({ label, weeks }) => {
+                const latest = weeks[weeks.length - 1]?.score;
+                const color = latest >= 4 ? COLORS.sky : latest >= 3 ? "#F5A623" : COLORS.red;
+                return (
+                  <div key={label} style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                    <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 8, color: COLORS.muted, width: 42, flexShrink: 0, letterSpacing: 1 }}>{label}</div>
+                    <div style={{ flex: 1, display: "flex", gap: 4, alignItems: "center" }}>
+                      {weeks.map((w, i) => {
+                        const c = w.score >= 4 ? COLORS.sky : w.score >= 3 ? "#F5A623" : COLORS.red;
+                        const isLatest = i === weeks.length - 1;
+                        return (
+                          <div key={i} style={{ width: isLatest ? 10 : 7, height: isLatest ? 10 : 7, borderRadius: "50%", background: c, opacity: isLatest ? 1 : 0.5, flexShrink: 0 }} />
+                        );
+                      })}
+                    </div>
+                    <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 16, color, fontWeight: 700, width: 20, textAlign: "right" }}>{latest}</div>
+                  </div>
+                );
+              })}
+              <div style={{ display: "flex", gap: 12, marginTop: 4, paddingTop: 8, borderTop: `1px solid ${COLORS.border}` }}>
+                {[{ color: COLORS.sky, label: "Strong (4-5)" }, { color: "#F5A623", label: "Developing (3)" }, { color: COLORS.red, label: "Needs focus (1-2)" }].map(({ color, label }) => (
+                  <div key={label} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: color }} />
+                    <div style={{ fontSize: 8, color: COLORS.muted, fontFamily: "'DM Mono', monospace" }}>{label}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       <button
         onClick={() => {
@@ -1153,8 +1204,10 @@ function AdminDashboard({ onBack }) {
   const [resetting, setResetting] = useState(false);
   const [resetDone, setResetDone] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
-  const weekKey = getWeekKey();
-  const weekNum = parseInt(weekKey.split("W")[1]);
+  const currentWeekKey = getWeekKey();
+  const [selectedWeekKey, setSelectedWeekKey] = useState(currentWeekKey);
+  const weekNum = parseInt(selectedWeekKey.split("W")[1]);
+  const isCurrentWeek = selectedWeekKey === currentWeekKey;
 
   const handleReset = async () => {
     setResetting(true);
@@ -1167,8 +1220,9 @@ function AdminDashboard({ onBack }) {
   };
 
   useEffect(() => {
+    setData(null);
     async function load() {
-      const weekSubs = await getWeekSubmissions(weekKey);
+      const weekSubs = await getWeekSubmissions(selectedWeekKey);
       const count = weekSubs.length;
       let totals = Array(7).fill(0);
       let scores = [];
@@ -1202,11 +1256,11 @@ function AdminDashboard({ onBack }) {
       };
       setData({ count, avgScore, avgPerQ, completionPct: Math.round((count / MAX_ROSTER) * 100), avgTeamEnergy, bands });
       setAllWeeks(weeks);
-      const fb = await getWeekFeedback(weekKey);
+      const fb = await getWeekFeedback(selectedWeekKey);
       setFeedback(fb);
     }
     load();
-  }, [weekKey]);
+  }, [selectedWeekKey]);
 
   return (
     <div style={{ ...styles.screen, gap: 16, overflowY: "auto" }}>
@@ -1221,7 +1275,12 @@ function AdminDashboard({ onBack }) {
       {!data ? <div style={{ color: COLORS.muted, fontSize: 13 }}>Loading...</div> : (
         <>
           <div style={{ background: COLORS.dim, border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: 20 }}>
-            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.sky, letterSpacing: 3, marginBottom: 16 }}>WEEK {weekNum} — CURRENT</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.sky, letterSpacing: 3 }}>WEEK {weekNum}{isCurrentWeek ? " — CURRENT" : " — HISTORICAL"}</div>
+              {!isCurrentWeek && (
+                <button onClick={() => setSelectedWeekKey(currentWeekKey)} style={{ background: "none", border: `1px solid ${COLORS.sky}44`, borderRadius: 6, padding: "4px 10px", color: COLORS.sky, fontSize: 9, cursor: "pointer", fontFamily: "'DM Mono', monospace", letterSpacing: 1 }}>← CURRENT WEEK</button>
+              )}
+            </div>
             {/* Roster completion progress */}
             <div style={{ marginBottom: 20 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
@@ -1370,14 +1429,18 @@ function AdminDashboard({ onBack }) {
 
           {allWeeks.length > 0 && (
             <div style={{ background: COLORS.dim, border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: 20 }}>
-              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.sky, letterSpacing: 3, marginBottom: 12 }}>ALL WEEKS</div>
-              {allWeeks.map(w => (
-                <div key={w.week} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: `1px solid ${COLORS.border}` }}>
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: COLORS.muted }}>WEEK {w.weekNum}</div>
-                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: COLORS.muted }}>{w.count} submitted</div>
-                  <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 16, color: COLORS.sky, fontWeight: 700 }}>{w.avg}/30</div>
-                </div>
-              ))}
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.sky, letterSpacing: 3, marginBottom: 4 }}>ALL WEEKS</div>
+              <div style={{ fontSize: 10, color: COLORS.muted, marginBottom: 12 }}>Tap a week to view its full breakdown.</div>
+              {allWeeks.map(w => {
+                const isSelected = w.week === selectedWeekKey;
+                return (
+                  <button key={w.week} onClick={() => { setSelectedWeekKey(w.week); window.scrollTo(0, 0); }} style={{ width: "100%", background: isSelected ? COLORS.sky + "18" : "none", border: "none", borderBottom: `1px solid ${COLORS.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", cursor: "pointer" }}>
+                    <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: isSelected ? COLORS.sky : COLORS.muted }}>WEEK {w.weekNum}{isSelected ? " ←" : ""}</div>
+                    <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: COLORS.muted }}>{w.count} submitted</div>
+                    <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 16, color: isSelected ? COLORS.sky : COLORS.white, fontWeight: 700 }}>{w.avg}/30</div>
+                  </button>
+                );
+              })}
             </div>
           )}
 

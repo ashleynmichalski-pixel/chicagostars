@@ -75,6 +75,15 @@ export async function resetAllData() {
 
 // ── Private (localStorage) ─────────────────────────────────────────────────
 
+export async function getPlayerFullHistory(playerNum) {
+  const { data } = await supabase
+    .from("submissions")
+    .select("week_key, week_num, score, answers")
+    .eq("player_num", playerNum)
+    .order("week_num", { ascending: true });
+  return data || [];
+}
+
 export async function getPlayerSubmission(playerNum, weekKey) {
   const { data } = await supabase
     .from("submissions")
