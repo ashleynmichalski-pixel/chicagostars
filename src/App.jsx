@@ -345,14 +345,17 @@ function ReturningEntry({ onEnter, onNewNumber }) {
 // ── SCREEN: Profile / Home ─────────────────────────────────────────────────
 function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey }) {
   const [teamData, setTeamData] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
   const thisWeekDone = history.some(h => h.week === weekKey);
 
   useEffect(() => {
     if (!thisWeekDone) return;
     async function loadTeam() {
+      setRefreshing(true);
       const submissions = await getWeekSubmissions(weekKey);
       const count = submissions.length;
-      if (count < MIN_SUBMISSIONS_TO_UNLOCK) { setTeamData({ count, unlocked: false }); return; }
+      if (count < MIN_SUBMISSIONS_TO_UNLOCK) { setTeamData({ count, unlocked: false }); setRefreshing(false); return; }
       let totals = Array(7).fill(0);
       let teamScores = [];
       let peerScores = [];
@@ -364,9 +367,10 @@ function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey }) {
       const avgPerQ = totals.map(t => (t / count).toFixed(1));
       const avgTeamEnergy = peerScores.length ? (peerScores.reduce((a, b) => a + b, 0) / peerScores.length).toFixed(1) : null;
       setTeamData({ count, unlocked: true, avgScore, avgPerQ, avgTeamEnergy });
+      setRefreshing(false);
     }
     loadTeam();
-  }, [thisWeekDone, weekKey]);
+  }, [thisWeekDone, weekKey, refreshKey]);
 
   const streak = (() => {
     let s = 0;
@@ -404,7 +408,10 @@ function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey }) {
         </div>
       ) : (
         <div style={{ background: COLORS.dim, border: `1px solid ${COLORS.sky}33`, borderRadius: 14, padding: 16 }}>
-          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.sky, letterSpacing: 3, marginBottom: 10 }}>THIS WEEK — TEAM DATA</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.sky, letterSpacing: 3 }}>THIS WEEK — TEAM DATA</div>
+            <button onClick={() => setRefreshKey(k => k + 1)} disabled={refreshing} style={{ background: "none", border: "none", color: refreshing ? COLORS.border : COLORS.muted, fontSize: 14, cursor: refreshing ? "default" : "pointer", padding: 0, lineHeight: 1 }}>↻</button>
+          </div>
           {!teamData ? (
             <div style={{ fontSize: 12, color: COLORS.muted }}>Loading...</div>
           ) : !teamData.unlocked ? (
