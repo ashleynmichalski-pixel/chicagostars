@@ -7,7 +7,7 @@ import {
 
 // ── Constants ──────────────────────────────────────────────────────────────
 const ADMIN_PASSWORD = "StarsIntent2026";
-const MIN_SUBMISSIONS_TO_UNLOCK = 10;
+const MIN_SUBMISSIONS_TO_UNLOCK = 5;
 const MAX_ROSTER = 25;
 
 const COLORS = {
