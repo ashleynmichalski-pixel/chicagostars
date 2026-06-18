@@ -502,10 +502,11 @@ function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey }) {
         </div>
       ) : (
         <div style={{ background: COLORS.dim, border: `1px solid ${COLORS.sky}33`, borderRadius: 14, padding: 16 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
             <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.sky, letterSpacing: 3 }}>THIS WEEK — TEAM DATA</div>
             <button onClick={() => setRefreshKey(k => k + 1)} disabled={refreshing} style={{ background: "none", border: "none", color: refreshing ? COLORS.border : COLORS.muted, fontSize: 14, cursor: refreshing ? "default" : "pointer", padding: 0, lineHeight: 1 }}>↻</button>
           </div>
+          <div style={{ fontSize: 11, color: COLORS.muted, lineHeight: 1.6, marginBottom: 10 }}>Your team's collective intentionality shapes the training environment everyone develops in. Use this as a pulse check — not a grade.</div>
           {!teamData ? (
             <div style={{ fontSize: 12, color: COLORS.muted }}>Loading...</div>
           ) : !teamData.unlocked ? (
