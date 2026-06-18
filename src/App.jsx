@@ -737,10 +737,16 @@ function AssessmentScreen({ playerNum, weekKey, onComplete }) {
         </div>
 
         <div style={{ flex: 1 }} />
-        {submitError && <div style={{ fontSize: 12, color: COLORS.sky, textAlign: "center", lineHeight: 1.6, background: COLORS.sky + "15", borderRadius: 10, padding: "10px 14px" }}>{submitError}</div>}
-        <Btn onClick={handleSubmit} disabled={submitting || !!submitError}>
-          {submitting ? "Submitting..." : "Submit & See My Score →"}
-        </Btn>
+        {submitError ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={{ fontSize: 12, color: COLORS.sky, textAlign: "center", lineHeight: 1.6, background: COLORS.sky + "15", borderRadius: 10, padding: "10px 14px" }}>{submitError}</div>
+            <Btn onClick={() => onComplete(computeIntentScore(answers), answers)}>View My Score →</Btn>
+          </div>
+        ) : (
+          <Btn onClick={handleSubmit} disabled={submitting}>
+            {submitting ? "Submitting..." : "Submit & See My Score →"}
+          </Btn>
+        )}
       </div>
     );
   }
