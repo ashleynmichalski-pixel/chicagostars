@@ -685,7 +685,7 @@ function AssessmentScreen({ playerNum, weekKey, onComplete }) {
           <div style={{ background: COLORS.dim, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: 18, display: "flex", flexDirection: "column", gap: 14 }}>
             <div>
               <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.sky, letterSpacing: 3, marginBottom: 4 }}>FOR COACHING STAFF — OPTIONAL</div>
-              <div style={{ fontSize: 11, color: COLORS.muted, lineHeight: 1.5 }}>Anonymous. Only the team psychologist sees these responses.</div>
+              <div style={{ fontSize: 11, color: COLORS.muted, lineHeight: 1.5 }}>Anonymous. Team psychologist only shares themes and averages.</div>
             </div>
 
             <div>
