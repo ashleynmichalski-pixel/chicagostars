@@ -306,16 +306,13 @@ function NumberEntry({ onEnter, onSwitchToLogin }) {
           </div>
         )}
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-            {[1,2,3,4,5,6,7,8,9].map(d => (
-              <button key={d} onClick={() => handleDigit(String(d))} style={styles.numBtn}>{d}</button>
-            ))}
-            <div />
-            <button onClick={() => handleDigit("0")} style={styles.numBtn}>0</button>
-            <div />
-          </div>
-          <button onClick={handleBack} style={{ ...styles.numBtn, width: "100%", color: COLORS.muted, fontSize: 20 }}>⌫ delete</button>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+          {[1,2,3,4,5,6,7,8,9].map(d => (
+            <button key={d} onClick={() => handleDigit(String(d))} style={styles.numBtn}>{d}</button>
+          ))}
+          <div />
+          <button onClick={() => handleDigit("0")} style={styles.numBtn}>0</button>
+          <button onClick={handleBack} style={{ ...styles.numBtn, color: COLORS.muted }}>⌫</button>
         </div>
 
         <div style={{ fontSize: 11, color: "#4A6580", textAlign: "center", lineHeight: 1.6 }}>
@@ -369,16 +366,13 @@ function ReturningEntry({ onEnter, onNewNumber, initialNum = "" }) {
 
         {error && <div style={{ fontSize: 12, color: COLORS.red, textAlign: "center" }}>{error}</div>}
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-            {[1,2,3,4,5,6,7,8,9].map(d => (
-              <button key={d} onClick={() => handleDigit(String(d))} style={styles.numBtn}>{d}</button>
-            ))}
-            <div />
-            <button onClick={() => handleDigit("0")} style={styles.numBtn}>0</button>
-            <div />
-          </div>
-          <button onClick={handleBack} style={{ ...styles.numBtn, width: "100%", color: COLORS.muted, fontSize: 20 }}>⌫ delete</button>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+          {[1,2,3,4,5,6,7,8,9].map(d => (
+            <button key={d} onClick={() => handleDigit(String(d))} style={styles.numBtn}>{d}</button>
+          ))}
+          <div />
+          <button onClick={() => handleDigit("0")} style={styles.numBtn}>0</button>
+          <button onClick={handleBack} style={{ ...styles.numBtn, color: COLORS.muted }}>⌫</button>
         </div>
       </div>
 
@@ -780,13 +774,8 @@ function AssessmentScreen({ playerNum, weekKey, onComplete }) {
           ))}
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {current > 0 && (
-              <button onClick={() => setCurrent(current - 1)} style={{ background: "none", border: "none", color: COLORS.muted, fontSize: 13, cursor: "pointer", padding: 0, fontFamily: "'DM Mono', monospace", letterSpacing: 1 }}>← BACK</button>
-            )}
-            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: COLORS.muted, letterSpacing: 1 }}>
-              QUESTION {current + 1} OF {QUESTIONS.length}
-            </div>
+          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: COLORS.muted, letterSpacing: 1 }}>
+            QUESTION {current + 1} OF {QUESTIONS.length}
           </div>
           <div style={{ fontSize: 9, letterSpacing: 2, color: q.type === "struggle" ? COLORS.red : q.type === "peer" ? "#F5A623" : COLORS.sky, background: q.type === "struggle" ? COLORS.red + "22" : q.type === "peer" ? "#F5A62322" : COLORS.sky + "22", padding: "3px 8px", borderRadius: 4, fontFamily: "'DM Mono', monospace", fontWeight: 500 }}>
             {q.type === "struggle" ? "REFLECTION" : q.type === "peer" ? "TEAM PERCEPTION" : "PERFORMANCE"}
@@ -819,6 +808,9 @@ function AssessmentScreen({ playerNum, weekKey, onComplete }) {
         </div>
       </div>
 
+      {current > 0 && (
+        <button onClick={() => setCurrent(current - 1)} style={{ background: "none", border: `1px solid ${COLORS.border}`, borderRadius: 10, color: COLORS.muted, fontSize: 13, cursor: "pointer", padding: "12px", fontFamily: "'DM Mono', monospace", letterSpacing: 1, width: "100%" }}>← BACK</button>
+      )}
     </div>
   );
 }
