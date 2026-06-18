@@ -548,7 +548,7 @@ function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey }) {
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                   <div style={{ width: 8, height: 8, borderRadius: 2, background: COLORS.red + "99", flexShrink: 0 }} />
-                  <div style={{ fontSize: 9, color: COLORS.muted, fontFamily: "'DM Mono', monospace" }}>STRUGGLE (LOWER = BETTER)</div>
+                  <div style={{ fontSize: 9, color: COLORS.muted, fontFamily: "'DM Mono', monospace" }}>STRUGGLE DIMENSIONS</div>
                 </div>
               </div>
               {teamData.avgTeamEnergy && (
