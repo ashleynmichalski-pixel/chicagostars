@@ -84,6 +84,14 @@ function getWeekLabel() {
   return `WEEK ${week} · ${now.toLocaleString("default", { month: "short" }).toUpperCase()} ${now.getFullYear()}`;
 }
 
+function getWeekDeadline() {
+  const now = new Date();
+  const daysUntilSunday = now.getDay() === 0 ? 0 : 7 - now.getDay();
+  const sunday = new Date(now);
+  sunday.setDate(now.getDate() + daysUntilSunday);
+  return sunday.toLocaleDateString("default", { month: "short", day: "numeric" });
+}
+
 function computeIntentScore(answers) {
   let total = 0;
   QUESTIONS.forEach((q, i) => {
@@ -383,14 +391,26 @@ function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey }) {
   const [refreshing, setRefreshing] = useState(false);
   const [expandedWeek, setExpandedWeek] = useState(null);
   const [weekDetails, setWeekDetails] = useState({});
+  const [showAths, setShowAths] = useState(() => {
+    if (typeof window !== "undefined" && window.matchMedia("(display-mode: standalone)").matches) return false;
+    return !localStorage.getItem("intentscore_aths_dismissed");
+  });
   const thisWeekDone = history.some(h => h.week === weekKey);
+  const bestScore = history.length >= 3 ? Math.max(...history.map(h => h.score)) : null;
+
+  const dismissAths = () => {
+    localStorage.setItem("intentscore_aths_dismissed", "1");
+    setShowAths(false);
+  };
 
   const handleHistoryTap = async (h) => {
     if (expandedWeek === h.week) { setExpandedWeek(null); return; }
     setExpandedWeek(h.week);
     if (!weekDetails[h.week]) {
       const sub = await getPlayerSubmission(playerNum, h.week);
-      if (sub) setWeekDetails(prev => ({ ...prev, [h.week]: sub }));
+      const noteRaw = localStorage.getItem(`intentscore_note:${playerNum}:${h.week}`);
+      const note = noteRaw ? JSON.parse(noteRaw).note : null;
+      if (sub) setWeekDetails(prev => ({ ...prev, [h.week]: { ...sub, note } }));
     }
   };
 
@@ -429,20 +449,40 @@ function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey }) {
 
   return (
     <div style={{ ...styles.screen, gap: 16, overflowY: "auto" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: 12 }}>
+      {showAths && (
+        <div style={{ background: COLORS.sky + "18", border: `1px solid ${COLORS.sky}44`, borderRadius: 12, padding: "12px 14px", display: "flex", gap: 10, alignItems: "flex-start", marginTop: 12 }}>
+          <div style={{ fontSize: 16, flexShrink: 0 }}>📲</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 12, color: COLORS.white, fontWeight: 500, marginBottom: 2 }}>Add to your home screen</div>
+            <div style={{ fontSize: 11, color: COLORS.muted, lineHeight: 1.5 }}>Tap Share → Add to Home Screen for quick weekly access.</div>
+          </div>
+          <button onClick={dismissAths} style={{ background: "none", border: "none", color: COLORS.muted, fontSize: 16, cursor: "pointer", padding: 0, lineHeight: 1, flexShrink: 0 }}>✕</button>
+        </div>
+      )}
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: showAths ? 0 : 12 }}>
         <div>
           <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.muted, letterSpacing: 3 }}>YOUR ID</div>
           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 56, color: COLORS.sky, fontWeight: 800, lineHeight: 1 }}>{playerNum}</div>
         </div>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 36, color: COLORS.white, fontWeight: 700, lineHeight: 1 }}>{streak}</div>
-          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 8, color: COLORS.muted, letterSpacing: 2 }}>WEEK STREAK 🔥</div>
+        <div style={{ display: "flex", gap: 20, alignItems: "flex-end" }}>
+          {bestScore !== null && (
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 36, color: "#F5A623", fontWeight: 700, lineHeight: 1 }}>{bestScore}</div>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 8, color: COLORS.muted, letterSpacing: 2 }}>BEST ⭐</div>
+            </div>
+          )}
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 36, color: COLORS.white, fontWeight: 700, lineHeight: 1 }}>{streak}</div>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 8, color: COLORS.muted, letterSpacing: 2 }}>STREAK 🔥</div>
+          </div>
         </div>
       </div>
 
       {!thisWeekDone ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <Btn onClick={onTakeAssessment}>Take This Week's Check-In →</Btn>
+          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.muted, letterSpacing: 2, textAlign: "center" }}>CLOSES {getWeekDeadline().toUpperCase()}</div>
           <div style={{ background: COLORS.dim, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: 16, display: "flex", gap: 12, alignItems: "center" }}>
             <div style={{ fontSize: 22 }}>🔒</div>
             <div>
@@ -554,6 +594,12 @@ function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey }) {
                           <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.sky, letterSpacing: 2, marginBottom: 6 }}>FOCUS</div>
                           <div style={{ fontSize: 12, color: "#AAC0D0", lineHeight: 1.65, borderLeft: `2px solid ${COLORS.sky}`, paddingLeft: 10 }}>{summary.focus}</div>
                         </div>
+                        {detail.note && (
+                          <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: 10 }}>
+                            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.muted, letterSpacing: 2, marginBottom: 6 }}>YOUR NOTE</div>
+                            <div style={{ fontSize: 12, color: COLORS.muted, lineHeight: 1.65, fontStyle: "italic" }}>{detail.note}</div>
+                          </div>
+                        )}
                       </>
                     )}
                   </div>
@@ -655,8 +701,13 @@ function AssessmentScreen({ playerNum, weekKey, onComplete }) {
           ))}
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: COLORS.muted, letterSpacing: 1 }}>
-            QUESTION {current + 1} OF {QUESTIONS.length}
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {current > 0 && (
+              <button onClick={() => setCurrent(current - 1)} style={{ background: "none", border: "none", color: COLORS.muted, fontSize: 13, cursor: "pointer", padding: 0, fontFamily: "'DM Mono', monospace", letterSpacing: 1 }}>← BACK</button>
+            )}
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: COLORS.muted, letterSpacing: 1 }}>
+              QUESTION {current + 1} OF {QUESTIONS.length}
+            </div>
           </div>
           <div style={{ fontSize: 9, letterSpacing: 2, color: q.type === "struggle" ? COLORS.red : q.type === "peer" ? "#F5A623" : COLORS.sky, background: q.type === "struggle" ? COLORS.red + "22" : q.type === "peer" ? "#F5A62322" : COLORS.sky + "22", padding: "3px 8px", borderRadius: 4, fontFamily: "'DM Mono', monospace", fontWeight: 500 }}>
             {q.type === "struggle" ? "REFLECTION" : q.type === "peer" ? "TEAM PERCEPTION" : "PERFORMANCE"}
@@ -858,7 +909,13 @@ function AdminDashboard({ onBack }) {
         count: s.length,
       })).sort((a, b) => a.weekNum - b.weekNum);
 
-      setData({ count, avgScore, avgPerQ, completionPct: Math.round((count / MAX_ROSTER) * 100), avgTeamEnergy });
+      const bands = {
+        high: scores.filter(s => s >= 24).length,
+        emerging: scores.filter(s => s >= 18 && s < 24).length,
+        inconsistent: scores.filter(s => s >= 12 && s < 18).length,
+        low: scores.filter(s => s < 12).length,
+      };
+      setData({ count, avgScore, avgPerQ, completionPct: Math.round((count / MAX_ROSTER) * 100), avgTeamEnergy, bands });
       setAllWeeks(weeks);
     }
     load();
@@ -899,6 +956,24 @@ function AdminDashboard({ onBack }) {
                 </div>
               ))}
             </div>
+            {data.bands && data.count > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.muted, letterSpacing: 2, marginBottom: 8 }}>SCORE DISTRIBUTION</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
+                  {[
+                    { label: "HIGH", count: data.bands.high, color: COLORS.sky },
+                    { label: "EMRG", count: data.bands.emerging, color: COLORS.sky + "88" },
+                    { label: "INCON", count: data.bands.inconsistent, color: "#F5A623" },
+                    { label: "LOW", count: data.bands.low, color: COLORS.red },
+                  ].map(({ label, count, color }) => (
+                    <div key={label} style={{ textAlign: "center", background: COLORS.navyDark, borderRadius: 8, padding: "10px 4px" }}>
+                      <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 26, color, fontWeight: 700, lineHeight: 1 }}>{count}</div>
+                      <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 7, color: COLORS.muted, letterSpacing: 1, marginTop: 3 }}>{label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {(() => {
               const note = getParticipationNote(data.count, MAX_ROSTER);
               return (
