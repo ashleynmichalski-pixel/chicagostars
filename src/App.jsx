@@ -818,7 +818,7 @@ function AssessmentScreen({ playerNum, weekKey, onComplete }) {
 }
 
 // ── SCREEN: Score Reveal ───────────────────────────────────────────────────
-function ScoreRevealScreen({ score, answers, prevScore, onViewProfile }) {
+function ScoreRevealScreen({ score, answers, prevScore, onViewProfile, onDeepProfile }) {
   const [displayed, setDisplayed] = useState(0);
   const band = getScoreBand(score);
   const summary = getSummaryContent(score, answers);
@@ -895,7 +895,122 @@ function ScoreRevealScreen({ score, answers, prevScore, onViewProfile }) {
         </div>
       </div>
 
-      <Btn onClick={onViewProfile} variant="secondary">View My Profile →</Btn>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
+        <Btn onClick={onDeepProfile}>View In-Depth Profile →</Btn>
+        <Btn onClick={onViewProfile} variant="secondary">View My Profile →</Btn>
+      </div>
+    </div>
+  );
+}
+
+// ── Deep profile content ───────────────────────────────────────────────────
+const DIMENSION_DETAIL = {
+  preparation: {
+    label: "Preparation",
+    what: "How deliberately you prime your mind before training begins.",
+    high: { read: "You're consistently entering sessions with a clear purpose. That pre-session clarity isn't a small thing — it's the difference between training and practicing. Athletes who set specific intentions before they start learn faster because their brain knows what to filter for. Keep it specific, keep it writeable.", action: "Push your intention further: not just what you'll work on, but what 'doing it well' will look like in that session. Raise the bar on your own standard." },
+    mid:  { read: "You're setting intentions some of the time — but not consistently enough for it to compound. Preparation only works when it becomes automatic. The sessions where you didn't prepare are the sessions where you defaulted to habit instead of growth.", action: "Before your next session, write your intention down — even one sentence. The act of writing it makes it real. Check back at the end and see if you followed through." },
+    low:  { read: "You're entering sessions without a clear target, which means your effort isn't being directed — it's just being spent. Volume without intention builds habits, not skills. You can work extremely hard and get extremely average results if you're not training toward something specific.", action: "Before your next session, answer one question out loud: what specifically will I do differently today than I did last time? If you can't answer it, you're not ready to start." },
+  },
+  awareness: {
+    label: "Awareness",
+    what: "Your ability to detect in real time when something isn't working and adjust.",
+    high: { read: "You have real-time feedback loops running. Noticing what isn't working while it's happening — not after the session, not after the season — is one of the hardest skills to develop. Most athletes need a coach to tell them. You're catching it yourself. That's a genuine edge that compounds over time.", action: "Start tracking what you're catching. After sessions, note what you noticed and what you changed. Patterns in your awareness will tell you where your blind spots still are." },
+    mid:  { read: "You're aware sometimes — but you're catching things after several reps instead of immediately. The gap isn't attention, it's calibration. You haven't yet set a clear enough standard for what 'working' looks like, so it takes longer to detect when you've drifted from it.", action: "Before your next session, define one specific thing to watch for. Not a vague feeling — a concrete marker. 'My hips aren't set before I receive' or 'I'm looking down instead of up.' Give your awareness a target." },
+    low:  { read: "You're completing sessions without detecting what's working and what isn't. That means you could be reinforcing poor patterns without knowing it — and every rep you take without feedback is a rep that locks something in. Awareness is trainable, but only if you practice it intentionally.", action: "Pause once, mid-session — just once. Ask yourself: is what I'm doing right now actually working? Yes or no. Then change something or stay the course. That one pause is the beginning of the skill." },
+  },
+  presence: {
+    label: "Presence",
+    what: "The degree to which you were mentally engaged, not just physically there.",
+    high: { read: "Your mental engagement this week was strong. You were where your feet were. That kind of presence is increasingly rare — distractions are everywhere and sustaining focus across a full session takes real discipline. The challenge now is maintaining it when conditions aren't ideal: when you're tired, frustrated, or coming off a bad rep.", action: "Notice what your best presence sessions have in common. Time of day, warm-up routine, mindset going in. Start engineering the conditions that make presence easier to access." },
+    mid:  { read: "You drifted in and out this week. Some moments you were fully in it, others your mind was somewhere else entirely. That fluctuation is normal — but it's where development slows, because you only learn in the moments you're actually present for. The moments you drifted, you were logging time without logging growth.", action: "When you notice yourself leaving, don't judge it — just name it. 'I just left.' Then come back. The noticing is the skill. You can't return to something you didn't realize you left." },
+    low:  { read: "You spent significant time this week physically in training but mentally elsewhere. That's one of the most expensive places to be — you're logging hours without logging learning. It also affects teammates. Presence isn't just about your development; it's part of the team's collective environment.", action: "Build a physical reset cue — one specific action that signals your brain to return. A breath, a word, a tap on your leg. Use it every time you catch yourself drifting. Consistency builds the habit." },
+  },
+  learning: {
+    label: "Learning",
+    what: "Whether you identified a specific gap and deliberately worked to close it.",
+    high: { read: "You completed the full loop this week: identified a gap, set an intention, and deliberately worked on it. That's not common. Most athletes are in motion without being in pursuit of something specific. The compounding effect of doing this consistently over a season — over a career — is enormous.", action: "Keep raising the quality of the gap you're targeting. As you close one, find the next. The goal is to always be working on the thing just at the edge of your current capability." },
+    mid:  { read: "You noticed something this week, but didn't fully pursue it. The noticing is real — that's the hardest part. What's missing is converting observation into deliberate action. There's a gap between 'I know I need to work on this' and 'I specifically practiced this today.'", action: "Make it concrete. Not 'work on my first touch' but 'receive with my body already turned.' The more specific the target, the more useful the rep. Specificity is what turns noticing into learning." },
+    low:  { read: "This week you went through training without identifying a specific gap to close. You put in work, but it wasn't directed at anything in particular. That's maintenance at best — and regression at worst if bad patterns are getting reps. Growth requires a target.", action: "After your next session, spend 90 seconds on this: what is one thing I did today that I want to do differently next time? Write it. Say it out loud. That question, answered honestly, is the beginning of real development." },
+  },
+  quality: {
+    label: "Quality",
+    what: "Whether you prioritized executing well over simply completing the work.",
+    high: { read: "You chose quality over completion this week. That's a harder standard to hold than most people realize — especially when you're tired, behind, or when no one's watching. The athletes who consistently choose quality over quantity are the ones whose reps actually transfer. Every rep you took with real intention this week is a rep that counts.", action: "Now raise the standard again. If quality this week was 8/10, what would 9/10 look like? The goal isn't perfection — it's always working at the edge of your current best." },
+    mid:  { read: "Some sessions this week you locked in on quality. Others you defaulted to completion — finishing the drill, hitting the number, checking the box. That split is where development diverges. The sessions where you chose quality are the ones that contributed to your growth. The others were mostly maintenance.", action: "When you feel yourself defaulting to completion, do fewer reps — not more. One well-executed rep is worth ten automatic ones. Give yourself permission to slow down and do it right." },
+    low:  { read: "This week effort and intentionality weren't aligned. You put in work, but the focus was on getting through it rather than getting something from it. Volume without quality doesn't build skill — it builds automation of whatever you're already doing, good or bad. Hard work in the wrong direction is still the wrong direction.", action: "Choose one drill in your next session and do it at half the normal volume with full attention on every single rep. That session will teach you more than doubling your reps at half the intention." },
+  },
+  recovery: {
+    label: "Recovery",
+    what: "How quickly and specifically you adjusted after a poor rep or play.",
+    high: { read: "After mistakes this week, you made specific adjustments before your next attempt. That's elite-level processing — most athletes either repeat the mistake or overcorrect emotionally. You're closing the feedback loop quickly and moving forward with information instead of frustration. Over a season, that compounds into a measurably faster development rate.", action: "Track what your adjustments actually are. You'll start to notice patterns in your mistakes — and patterns in what fixes them. That data is yours. Use it." },
+    mid:  { read: "You recovered from mistakes sometimes — but your adjustments weren't always specific enough. You reset emotionally, which is good, but you didn't always identify what exactly to change on the next attempt. The result: you moved on, but didn't fully learn from the rep.", action: "Before your next rep after any mistake, name one specific thing you're changing. Say it in your head. Make the adjustment visible to yourself before you execute. The pause is where the learning is." },
+    low:  { read: "After mistakes this week, the pattern was repetition rather than adjustment. That's not a mental weakness — it's a missing habit. Without a deliberate recovery routine, bad reps just accumulate and get practiced. You can't out-effort a loop that keeps repeating itself.", action: "Build a 3-second rule: after any poor rep, take 3 full seconds before the next one. In those 3 seconds, name one thing you're changing. That pause is non-negotiable. It's where the rep becomes information instead of just a mistake." },
+  },
+};
+
+function getAdjustedScore(q, answers, idx) {
+  const raw = answers[idx] ?? 0;
+  return q.type === "struggle" && !q.reversed ? 6 - raw : raw;
+}
+
+// ── SCREEN: Deep Profile ───────────────────────────────────────────────────
+function DeepProfileScreen({ score, answers, onBack }) {
+  const band = getScoreBand(score);
+  const nonPeerQs = QUESTIONS.filter(q => q.type !== "peer");
+
+  return (
+    <div style={{ ...styles.screen, gap: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 12 }}>
+        <button onClick={onBack} style={{ background: "none", border: "none", color: COLORS.muted, fontSize: 13, cursor: "pointer", padding: 0, fontFamily: "'DM Mono', monospace", letterSpacing: 1, flexShrink: 0 }}>← BACK</button>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 22, fontWeight: 800, color: COLORS.white, letterSpacing: 1, lineHeight: 1 }}>IN-DEPTH PROFILE</div>
+          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.muted, letterSpacing: 2, marginTop: 2 }}>{getWeekLabel()}</div>
+        </div>
+        <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, color: band.color, fontWeight: 800 }}>{score}<span style={{ fontSize: 13, color: COLORS.muted, fontWeight: 400 }}>/30</span></div>
+      </div>
+
+      <div style={{ fontSize: 11, color: COLORS.muted, lineHeight: 1.6, background: COLORS.dim, borderRadius: 10, padding: "10px 14px", borderLeft: `3px solid ${COLORS.sky}` }}>
+        Your six intentionality dimensions, broken down individually. Each reflects a different aspect of how you showed up this week.
+      </div>
+
+      {nonPeerQs.map((q, i) => {
+        const adjusted = getAdjustedScore(q, answers, i);
+        const tier = adjusted >= 4 ? "high" : adjusted >= 3 ? "mid" : "low";
+        const detail = DIMENSION_DETAIL[q.dimension];
+        if (!detail) return null;
+        const content = detail[tier];
+        const color = adjusted >= 4 ? COLORS.sky : adjusted >= 3 ? "#F5A623" : COLORS.red;
+        const tierLabel = adjusted >= 4 ? "STRONG" : adjusted >= 3 ? "DEVELOPING" : "NEEDS FOCUS";
+
+        return (
+          <div key={q.id} style={{ background: COLORS.dim, border: `1px solid ${color}33`, borderRadius: 16, padding: 18, display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div>
+                <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 18, fontWeight: 800, color: COLORS.white, letterSpacing: 1 }}>{detail.label.toUpperCase()}</div>
+                <div style={{ fontSize: 10, color: COLORS.muted, marginTop: 2, lineHeight: 1.4 }}>{detail.what}</div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2, flexShrink: 0, marginLeft: 12 }}>
+                <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, color, fontWeight: 800, lineHeight: 1 }}>{adjusted}<span style={{ fontSize: 12, color: COLORS.muted, fontWeight: 400 }}>/5</span></div>
+                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 7, color, letterSpacing: 2 }}>{tierLabel}</div>
+              </div>
+            </div>
+
+            <div style={{ height: 4, background: COLORS.navyDark, borderRadius: 2 }}>
+              <div style={{ height: "100%", width: `${(adjusted / 5) * 100}%`, background: color, borderRadius: 2, transition: "width 0.8s ease" }} />
+            </div>
+
+            <div style={{ fontSize: 12, color: COLORS.white, lineHeight: 1.75, fontWeight: 300 }}>{content.read}</div>
+
+            <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: 12, display: "flex", flexDirection: "column", gap: 6 }}>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color, letterSpacing: 2 }}>THIS WEEK'S ACTION</div>
+              <div style={{ fontSize: 12, color: "#AAC0D0", lineHeight: 1.65, borderLeft: `2px solid ${color}`, paddingLeft: 10 }}>{content.action}</div>
+            </div>
+          </div>
+        );
+      })}
+
+      <Btn onClick={onBack} variant="secondary">← Back to My Score</Btn>
     </div>
   );
 }
@@ -1262,7 +1377,8 @@ export default function IntentScore() {
           {view === "entry" && <NumberEntry onEnter={handleNumberEntered} onSwitchToLogin={(n) => { setPrefillNum(n); setView("returning"); }} />}
           {view === "profile" && <ProfileScreen playerNum={playerNum} history={history} weekKey={weekKey} onTakeAssessment={() => { if (!alreadySubmitted) setView("assessment"); }} />}
           {view === "assessment" && <AssessmentScreen playerNum={playerNum} weekKey={weekKey} onComplete={handleAssessmentComplete} />}
-          {view === "result" && resultData && <ScoreRevealScreen score={resultData.score} answers={resultData.answers} prevScore={resultData.prevScore} onViewProfile={() => setView("profile")} />}
+          {view === "result" && resultData && <ScoreRevealScreen score={resultData.score} answers={resultData.answers} prevScore={resultData.prevScore} onViewProfile={() => setView("profile")} onDeepProfile={() => setView("deep-profile")} />}
+          {view === "deep-profile" && resultData && <DeepProfileScreen score={resultData.score} answers={resultData.answers} onBack={() => setView("result")} />}
           {view === "admin-login" && <AdminLogin onLogin={() => setView("admin")} />}
           {view === "admin" && <AdminDashboard onBack={() => setView(playerNum ? "profile" : "returning")} />}
         </div>
