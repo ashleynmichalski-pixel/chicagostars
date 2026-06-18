@@ -576,7 +576,7 @@ function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey }) {
               })()}
               <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: 10, marginTop: 4 }}>
                 <div style={{ fontSize: 10, color: "#4A6580", lineHeight: 1.6 }}>
-                  Team data resets each week as new check-ins come in. As the season builds, your individual history above will show how your scores track week over week.
+                  Team data resets each week as new check-ins come in. As the season builds, your individual history below will show how your scores track week over week.
                 </div>
               </div>
             </div>
