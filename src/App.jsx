@@ -34,6 +34,14 @@ const QUESTIONS = [
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────────────
+function getParticipationNote(count, total) {
+  const pct = count / total;
+  if (pct >= 0.8) return { text: `${count} of ${total} athletes responded — high participation. This is a reliable read on where the team is this week.`, color: COLORS.sky };
+  if (pct >= 0.5) return { text: `${count} of ${total} athletes responded — solid sample. This reflects a meaningful portion of the team but isn't the full picture.`, color: COLORS.sky };
+  if (pct >= 0.3) return { text: `${count} of ${total} athletes responded — partial data. Directionally useful, but about half the team hasn't weighed in yet.`, color: "#F5A623" };
+  return { text: `${count} of ${total} athletes responded — small sample. Treat this as an early signal only, not a team-wide read.`, color: "#F5A623" };
+}
+
 function getWeekKey() {
   const now = new Date();
   const jan1 = new Date(now.getFullYear(), 0, 1);
@@ -386,7 +394,14 @@ function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey }) {
                   {teamData.avgScore}<span style={{ fontSize: 14, color: COLORS.muted }}>/30</span>
                 </div>
               </div>
-              <div style={{ fontSize: 11, color: COLORS.muted }}>{teamData.count} athletes submitted this week</div>
+              {(() => {
+                const note = getParticipationNote(teamData.count, MAX_ROSTER);
+                return (
+                  <div style={{ fontSize: 11, color: note.color, lineHeight: 1.55, background: note.color + "15", borderRadius: 8, padding: "8px 10px" }}>
+                    {note.text}
+                  </div>
+                );
+              })()}
               <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 4 }}>
                 {QUESTIONS.filter(q => q.type !== "peer").map((q, i) => (
                   <div key={q.id} style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -724,6 +739,14 @@ function AdminDashboard({ onBack }) {
                 </div>
               ))}
             </div>
+            {(() => {
+              const note = getParticipationNote(data.count, MAX_ROSTER);
+              return (
+                <div style={{ fontSize: 11, color: note.color, lineHeight: 1.55, background: note.color + "15", borderRadius: 8, padding: "8px 10px", marginBottom: 16 }}>
+                  {note.text}
+                </div>
+              );
+            })()}
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.muted, letterSpacing: 2, marginBottom: 4 }}>AVG PER DIMENSION</div>
               {QUESTIONS.map((q, i) => (
