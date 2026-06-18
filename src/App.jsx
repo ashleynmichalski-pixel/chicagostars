@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import {
   playerExists, registerPlayer, saveSubmission,
   getPlayerHistory, getWeekSubmissions, getAllSubmissions,
-  resetAllData, saveNote, getPlayerSubmission,
+  resetAllData, saveNote, getPlayerSubmission, getWeekFeedback,
 } from "./lib/db";
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -629,6 +629,8 @@ function AssessmentScreen({ playerNum, weekKey, onComplete }) {
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState(Array(7).fill(null));
   const [note, setNote] = useState("");
+  const [coachingRetention, setCoachingRetention] = useState(null);
+  const [otherConcerns, setOtherConcerns] = useState("");
   const [showNote, setShowNote] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
@@ -654,6 +656,7 @@ function AssessmentScreen({ playerNum, weekKey, onComplete }) {
     const weekNum = parseInt(weekKey.split("W")[1]);
     const { error } = await saveSubmission({
       weekKey, playerNum, answers: answers.map(a => a ?? 0), score, weekNum,
+      coachingRetention, otherConcerns,
     });
     if (error) {
       setSubmitting(false);
@@ -668,26 +671,68 @@ function AssessmentScreen({ playerNum, weekKey, onComplete }) {
   if (showNote) {
     return (
       <div style={styles.screen}>
-        <div style={{ marginTop: 20 }}>
-          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.muted, letterSpacing: 3, marginBottom: 8 }}>OPTIONAL — PRIVATE NOTE</div>
-          <div style={{ fontSize: 15, color: COLORS.white, lineHeight: 1.6, marginBottom: 20, fontWeight: 300 }}>
-            Anything you want to remember about this week? Only you can see this.
+        <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 20 }}>
+
+          {/* Coaching feedback section */}
+          <div style={{ background: COLORS.dim, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: 18, display: "flex", flexDirection: "column", gap: 14 }}>
+            <div>
+              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.sky, letterSpacing: 3, marginBottom: 4 }}>FOR COACHING STAFF — OPTIONAL</div>
+              <div style={{ fontSize: 11, color: COLORS.muted, lineHeight: 1.5 }}>Anonymous. Only the team psychologist sees these responses.</div>
+            </div>
+
+            <div>
+              <div style={{ fontSize: 13, color: COLORS.white, lineHeight: 1.55, fontWeight: 300, marginBottom: 12 }}>
+                This week, how well are you retaining and understanding the information from coaching sessions?
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                {[1, 2, 3, 4, 5].map(v => (
+                  <button key={v} onClick={() => setCoachingRetention(coachingRetention === v ? null : v)} style={{
+                    flex: 1, aspectRatio: "1", background: coachingRetention === v ? COLORS.sky : COLORS.navyDark,
+                    border: `1px solid ${coachingRetention === v ? COLORS.sky : COLORS.border}`,
+                    borderRadius: 10, fontFamily: "'Barlow Condensed', sans-serif", fontSize: 22, fontWeight: 700,
+                    color: coachingRetention === v ? COLORS.navy : COLORS.muted, cursor: "pointer", transition: "all 0.15s",
+                  }}>
+                    {v}
+                  </button>
+                ))}
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5 }}>
+                <div style={{ fontSize: 9, color: "#4A6580" }}>Not at all</div>
+                <div style={{ fontSize: 9, color: "#4A6580" }}>Completely</div>
+              </div>
+            </div>
+
+            <div>
+              <div style={{ fontSize: 13, color: COLORS.white, lineHeight: 1.55, fontWeight: 300, marginBottom: 8 }}>
+                Any other concerns or thoughts for the coaching staff?
+              </div>
+              <textarea
+                value={otherConcerns}
+                onChange={e => setOtherConcerns(e.target.value)}
+                placeholder="Anything on your mind..."
+                style={{ width: "100%", background: COLORS.navyDark, border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: 14, color: COLORS.white, fontSize: 13, fontFamily: "'DM Sans', sans-serif", resize: "none", height: 80, outline: "none", lineHeight: 1.6, boxSizing: "border-box" }}
+              />
+            </div>
           </div>
-          <textarea
-            value={note}
-            onChange={e => setNote(e.target.value)}
-            placeholder="Travel schedule, injury, something you noticed..."
-            style={{ width: "100%", background: COLORS.dim, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: 16, color: COLORS.white, fontSize: 14, fontFamily: "'DM Sans', sans-serif", resize: "none", height: 120, outline: "none", lineHeight: 1.6, boxSizing: "border-box" }}
-          />
+
+          {/* Private note section */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.muted, letterSpacing: 3 }}>YOUR PRIVATE NOTE — OPTIONAL</div>
+            <div style={{ fontSize: 11, color: COLORS.muted, lineHeight: 1.5 }}>Only you can see this — not stored on any server.</div>
+            <textarea
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              placeholder="Travel schedule, injury, something you noticed..."
+              style={{ width: "100%", background: COLORS.dim, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: 14, color: COLORS.white, fontSize: 13, fontFamily: "'DM Sans', sans-serif", resize: "none", height: 90, outline: "none", lineHeight: 1.6, boxSizing: "border-box" }}
+            />
+          </div>
         </div>
+
         <div style={{ flex: 1 }} />
         {submitError && <div style={{ fontSize: 12, color: COLORS.sky, textAlign: "center", lineHeight: 1.6, background: COLORS.sky + "15", borderRadius: 10, padding: "10px 14px" }}>{submitError}</div>}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <Btn onClick={handleSubmit} disabled={submitting || !!submitError}>
-            {submitting ? "Submitting..." : "Submit & See My Score →"}
-          </Btn>
-          <Btn onClick={handleSubmit} variant="secondary" disabled={submitting || !!submitError}>Skip Note</Btn>
-        </div>
+        <Btn onClick={handleSubmit} disabled={submitting || !!submitError}>
+          {submitting ? "Submitting..." : "Submit & See My Score →"}
+        </Btn>
       </div>
     );
   }
@@ -865,6 +910,7 @@ function AdminLogin({ onLogin }) {
 function AdminDashboard({ onBack }) {
   const [data, setData] = useState(null);
   const [allWeeks, setAllWeeks] = useState([]);
+  const [feedback, setFeedback] = useState([]);
   const [resetting, setResetting] = useState(false);
   const [resetDone, setResetDone] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
@@ -917,6 +963,8 @@ function AdminDashboard({ onBack }) {
       };
       setData({ count, avgScore, avgPerQ, completionPct: Math.round((count / MAX_ROSTER) * 100), avgTeamEnergy, bands });
       setAllWeeks(weeks);
+      const fb = await getWeekFeedback(weekKey);
+      setFeedback(fb);
     }
     load();
   }, [weekKey]);
@@ -1015,6 +1063,57 @@ function AdminDashboard({ onBack }) {
               );
             })()}
           </div>
+
+          {feedback.length > 0 && (() => {
+            const retentionScores = feedback.map(f => f.coaching_retention).filter(Boolean);
+            const avgRetention = retentionScores.length
+              ? (retentionScores.reduce((a, b) => a + b, 0) / retentionScores.length).toFixed(1)
+              : null;
+            const concerns = feedback.map(f => f.other_concerns).filter(Boolean);
+            return (
+              <div style={{ background: COLORS.dim, border: `1px solid ${COLORS.sky}33`, borderRadius: 16, padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>
+                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.sky, letterSpacing: 3 }}>COACHING FEEDBACK — WEEK {weekNum}</div>
+
+                {avgRetention && (
+                  <div>
+                    <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.muted, letterSpacing: 2, marginBottom: 10 }}>
+                      INFO RETENTION · {retentionScores.length} of {feedback.length} responded
+                    </div>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <div style={{ flex: 1, height: 6, background: COLORS.navyDark, borderRadius: 3 }}>
+                        <div style={{ height: "100%", width: `${(parseFloat(avgRetention) / 5) * 100}%`, background: parseFloat(avgRetention) >= 4 ? COLORS.sky : parseFloat(avgRetention) >= 3 ? "#F5A623" : COLORS.red, borderRadius: 3, transition: "width 0.8s" }} />
+                      </div>
+                      <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 24, color: COLORS.sky, fontWeight: 700, width: 40, textAlign: "right" }}>
+                        {avgRetention}<span style={{ fontSize: 11, color: COLORS.muted }}>/5</span>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+                      {[1,2,3,4,5].map(v => {
+                        const c = retentionScores.filter(s => s === v).length;
+                        return (
+                          <div key={v} style={{ textAlign: "center", flex: 1 }}>
+                            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 16, color: c > 0 ? COLORS.white : COLORS.border, fontWeight: 700 }}>{c}</div>
+                            <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 7, color: COLORS.muted }}>{v}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {concerns.length > 0 && (
+                  <div style={{ borderTop: avgRetention ? `1px solid ${COLORS.border}` : "none", paddingTop: avgRetention ? 14 : 0, display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.muted, letterSpacing: 2 }}>CONCERNS & NOTES ({concerns.length})</div>
+                    {concerns.map((c, i) => (
+                      <div key={i} style={{ fontSize: 12, color: COLORS.white, lineHeight: 1.65, background: COLORS.navyDark, borderRadius: 8, padding: "10px 12px", borderLeft: `3px solid ${COLORS.sky}44` }}>
+                        {c}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {allWeeks.length > 1 && (
             <div style={{ background: COLORS.dim, border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: 20 }}>

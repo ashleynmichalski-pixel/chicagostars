@@ -20,15 +20,26 @@ export async function registerPlayer(playerNum) {
   await supabase.from("players").insert({ player_num: playerNum });
 }
 
-export async function saveSubmission({ weekKey, playerNum, answers, score, weekNum }) {
+export async function saveSubmission({ weekKey, playerNum, answers, score, weekNum, coachingRetention, otherConcerns }) {
   const { error } = await supabase.from("submissions").insert({
     week_key: weekKey,
     player_num: playerNum,
     answers: answers.map((a) => a ?? 0),
     score,
     week_num: weekNum,
+    ...(coachingRetention != null && { coaching_retention: coachingRetention }),
+    ...(otherConcerns?.trim() && { other_concerns: otherConcerns.trim() }),
   });
   return { error };
+}
+
+export async function getWeekFeedback(weekKey) {
+  const { data } = await supabase
+    .from("submissions")
+    .select("coaching_retention, other_concerns")
+    .eq("week_key", weekKey)
+    .or("coaching_retention.not.is.null,other_concerns.not.is.null");
+  return data || [];
 }
 
 export async function getPlayerHistory(playerNum) {
