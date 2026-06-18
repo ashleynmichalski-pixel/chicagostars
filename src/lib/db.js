@@ -63,6 +63,16 @@ export async function resetAllData() {
 
 // ── Private (localStorage) ─────────────────────────────────────────────────
 
+export async function getPlayerSubmission(playerNum, weekKey) {
+  const { data } = await supabase
+    .from("submissions")
+    .select("answers, score")
+    .eq("player_num", playerNum)
+    .eq("week_key", weekKey)
+    .maybeSingle();
+  return data || null;
+}
+
 export function saveNote(playerNum, weekKey, note) {
   localStorage.setItem(
     `intentscore_note:${playerNum}:${weekKey}`,

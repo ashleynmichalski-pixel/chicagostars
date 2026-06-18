@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import {
   playerExists, registerPlayer, saveSubmission,
   getPlayerHistory, getWeekSubmissions, getAllSubmissions,
-  resetAllData, saveNote,
+  resetAllData, saveNote, getPlayerSubmission,
 } from "./lib/db";
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -347,7 +347,18 @@ function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey }) {
   const [teamData, setTeamData] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const [expandedWeek, setExpandedWeek] = useState(null);
+  const [weekDetails, setWeekDetails] = useState({});
   const thisWeekDone = history.some(h => h.week === weekKey);
+
+  const handleHistoryTap = async (h) => {
+    if (expandedWeek === h.week) { setExpandedWeek(null); return; }
+    setExpandedWeek(h.week);
+    if (!weekDetails[h.week]) {
+      const sub = await getPlayerSubmission(playerNum, h.week);
+      if (sub) setWeekDetails(prev => ({ ...prev, [h.week]: sub }));
+    }
+  };
 
   useEffect(() => {
     if (!thisWeekDone) return;
@@ -479,15 +490,40 @@ function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey }) {
       {history.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.muted, letterSpacing: 3 }}>YOUR HISTORY</div>
-          {[...history].sort((a, b) => b.weekNum - a.weekNum).map((h) => (
-            <div key={h.week} style={{ display: "flex", alignItems: "center", background: COLORS.dim, border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: "12px 14px", gap: 10 }}>
-              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: COLORS.muted, width: 48, flexShrink: 0 }}>WK {h.weekNum}</div>
-              <div style={{ flex: 1, height: 3, background: COLORS.navyDark, borderRadius: 2 }}>
-                <div style={{ height: "100%", width: `${(h.score / 30) * 100}%`, background: COLORS.sky, borderRadius: 2 }} />
+          {[...history].sort((a, b) => b.weekNum - a.weekNum).map((h) => {
+            const isOpen = expandedWeek === h.week;
+            const detail = weekDetails[h.week];
+            const band = getScoreBand(h.score);
+            const summary = detail ? getSummaryContent(h.score, detail.answers) : null;
+            return (
+              <div key={h.week} style={{ background: COLORS.dim, border: `1px solid ${isOpen ? COLORS.sky + "55" : COLORS.border}`, borderRadius: 10, overflow: "hidden", transition: "border-color 0.2s" }}>
+                <button onClick={() => handleHistoryTap(h)} style={{ width: "100%", background: "none", border: "none", display: "flex", alignItems: "center", padding: "12px 14px", gap: 10, cursor: "pointer" }}>
+                  <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, color: COLORS.muted, width: 48, flexShrink: 0, textAlign: "left" }}>WK {h.weekNum}</div>
+                  <div style={{ flex: 1, height: 3, background: COLORS.navyDark, borderRadius: 2 }}>
+                    <div style={{ height: "100%", width: `${(h.score / 30) * 100}%`, background: COLORS.sky, borderRadius: 2 }} />
+                  </div>
+                  <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 20, color: COLORS.sky, fontWeight: 700, width: 40, textAlign: "right" }}>{h.score}</div>
+                  <div style={{ color: COLORS.muted, fontSize: 12, width: 14, textAlign: "right", flexShrink: 0 }}>{isOpen ? "▲" : "▼"}</div>
+                </button>
+                {isOpen && (
+                  <div style={{ padding: "0 14px 14px", display: "flex", flexDirection: "column", gap: 12 }}>
+                    <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, letterSpacing: 3, color: band.color, fontWeight: 700 }}>{band.label}</div>
+                    {!detail ? (
+                      <div style={{ fontSize: 12, color: COLORS.muted }}>Loading...</div>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: 12, color: COLORS.white, lineHeight: 1.7, fontWeight: 300 }}>{summary.text}</div>
+                        <div style={{ borderTop: `1px solid ${COLORS.border}`, paddingTop: 10 }}>
+                          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.sky, letterSpacing: 2, marginBottom: 6 }}>FOCUS</div>
+                          <div style={{ fontSize: 12, color: "#AAC0D0", lineHeight: 1.65, borderLeft: `2px solid ${COLORS.sky}`, paddingLeft: 10 }}>{summary.focus}</div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
-              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 20, color: COLORS.sky, fontWeight: 700, width: 40, textAlign: "right" }}>{h.score}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -497,7 +533,7 @@ function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey }) {
           localStorage.removeItem("intentscore_seen");
           window.location.reload();
         }}
-        style={{ background: "none", border: "none", color: COLORS.border, fontSize: 10, fontFamily: "'DM Mono', monospace", letterSpacing: 2, cursor: "pointer", textAlign: "center", paddingBottom: 8, textDecoration: "underline", textUnderlineOffset: 3 }}
+        style={{ background: "none", border: "none", color: "#4A6580", fontSize: 10, fontFamily: "'DM Mono', monospace", letterSpacing: 2, cursor: "pointer", textAlign: "center", paddingBottom: 8, textDecoration: "underline", textUnderlineOffset: 3 }}
       >
         START OVER / SWITCH NUMBER
       </button>
