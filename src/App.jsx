@@ -665,11 +665,10 @@ function AssessmentScreen({ playerNum, weekKey, onComplete }) {
     const next = [...answers];
     next[current] = val;
     setAnswers(next);
-  };
-
-  const handleNext = () => {
-    if (isLast) setShowNote(true);
-    else setCurrent(current + 1);
+    setTimeout(() => {
+      if (current === QUESTIONS.length - 1) setShowNote(true);
+      else setCurrent(c => c + 1);
+    }, 320);
   };
 
   const handleSubmit = async () => {
@@ -814,9 +813,6 @@ function AssessmentScreen({ playerNum, weekKey, onComplete }) {
         </div>
       </div>
 
-      <Btn onClick={handleNext} disabled={answers[current] === null}>
-        {isLast ? "Finish →" : "Next →"}
-      </Btn>
     </div>
   );
 }
