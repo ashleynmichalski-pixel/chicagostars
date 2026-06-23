@@ -1430,7 +1430,7 @@ function AdminDashboard({ onBack }) {
               <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 80 }}>
                 {allWeeks.map((w) => (
                   <div key={w.week} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                    <div style={{ width: "100%", background: w.week === weekKey ? COLORS.sky : COLORS.sky + "55", borderRadius: "3px 3px 0 0", height: `${(w.avg / 30) * 80}px`, transition: "height 0.5s" }} />
+                    <div style={{ width: "100%", background: w.week === selectedWeekKey ? COLORS.sky : COLORS.sky + "55", borderRadius: "3px 3px 0 0", height: `${(w.avg / 30) * 80}px`, transition: "height 0.5s" }} />
                     <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 7, color: COLORS.muted }}>W{w.weekNum}</div>
                   </div>
                 ))}
