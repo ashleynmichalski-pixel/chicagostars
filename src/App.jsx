@@ -386,7 +386,7 @@ function ReturningEntry({ onEnter, onNewNumber, initialNum = "" }) {
 }
 
 // ── SCREEN: Profile / Home ─────────────────────────────────────────────────
-function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey }) {
+function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey, onViewFullReport }) {
   const [teamData, setTeamData] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
@@ -627,6 +627,12 @@ function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey }) {
                             <div style={{ fontSize: 12, color: COLORS.muted, lineHeight: 1.65, fontStyle: "italic" }}>{detail.note}</div>
                           </div>
                         )}
+                        <button
+                          onClick={() => onViewFullReport(h.score, detail.answers, `WEEK ${h.weekNum}`)}
+                          style={{ marginTop: 2, background: "none", border: `1px solid ${COLORS.sky}55`, borderRadius: 10, color: COLORS.sky, fontSize: 11, fontFamily: "'DM Mono', monospace", letterSpacing: 2, cursor: "pointer", padding: "10px", width: "100%" }}
+                        >
+                          VIEW FULL REPORT →
+                        </button>
                       </>
                     )}
                   </div>
@@ -769,8 +775,8 @@ function AssessmentScreen({ playerNum, weekKey, onComplete }) {
                 ))}
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5 }}>
-                <div style={{ fontSize: 9, color: "#4A6580" }}>Not at all</div>
-                <div style={{ fontSize: 9, color: "#4A6580" }}>Completely</div>
+                <div style={{ fontSize: 9, color: COLORS.muted }}>Not at all</div>
+                <div style={{ fontSize: 9, color: COLORS.muted }}>Completely</div>
               </div>
             </div>
 
@@ -852,8 +858,8 @@ function AssessmentScreen({ playerNum, weekKey, onComplete }) {
             ))}
           </div>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <div style={{ fontSize: 9, color: "#4A6580" }}>Not at all</div>
-            <div style={{ fontSize: 9, color: "#4A6580" }}>Completely true</div>
+            <div style={{ fontSize: 9, color: COLORS.muted }}>Not at all</div>
+            <div style={{ fontSize: 9, color: COLORS.muted }}>Completely true</div>
           </div>
         </div>
       </div>
@@ -1097,7 +1103,7 @@ function getAdjustedScore(q, answers, idx) {
 }
 
 // ── SCREEN: Deep Profile ───────────────────────────────────────────────────
-function DeepProfileScreen({ score, answers, onBack }) {
+function DeepProfileScreen({ score, answers, onBack, weekLabel }) {
   const band = getScoreBand(score);
   const nonPeerQs = QUESTIONS.filter(q => q.type !== "peer");
 
@@ -1111,7 +1117,7 @@ function DeepProfileScreen({ score, answers, onBack }) {
         <button onClick={onBack} style={{ background: "none", border: "none", color: COLORS.muted, fontSize: 13, cursor: "pointer", padding: 0, fontFamily: "'DM Mono', monospace", letterSpacing: 1, flexShrink: 0 }}>← BACK</button>
         <div style={{ flex: 1 }}>
           <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 22, fontWeight: 800, color: COLORS.white, letterSpacing: 1, lineHeight: 1 }}>IN-DEPTH PROFILE</div>
-          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.muted, letterSpacing: 2, marginTop: 2 }}>{getWeekLabel()}</div>
+          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.muted, letterSpacing: 2, marginTop: 2 }}>{weekLabel || getWeekLabel()}</div>
         </div>
         <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 28, color: band.color, fontWeight: 800 }}>{score}<span style={{ fontSize: 13, color: COLORS.muted, fontWeight: 400 }}>/30</span></div>
       </div>
@@ -1493,6 +1499,7 @@ export default function IntentScore() {
   const [playerNum, setPlayerNum] = useState(null);
   const [history, setHistory] = useState([]);
   const [resultData, setResultData] = useState(null);
+  const [deepData, setDeepData] = useState(null);
   const [prefillNum, setPrefillNum] = useState("");
 
   useEffect(() => {
@@ -1548,10 +1555,12 @@ export default function IntentScore() {
           {view === "onboarding" && <OnboardingScreen onContinue={handleOnboarding} />}
           {view === "returning" && <ReturningEntry onEnter={handleNumberEntered} onNewNumber={() => { setPrefillNum(""); setView("entry"); }} initialNum={prefillNum} />}
           {view === "entry" && <NumberEntry onEnter={handleNumberEntered} onSwitchToLogin={(n) => { setPrefillNum(n); setView("returning"); }} />}
-          {view === "profile" && <ProfileScreen playerNum={playerNum} history={history} weekKey={weekKey} onTakeAssessment={() => { if (!alreadySubmitted) setView("assessment"); }} />}
+          {view === "profile" && <ProfileScreen playerNum={playerNum} history={history} weekKey={weekKey} onTakeAssessment={() => { if (!alreadySubmitted) setView("assessment"); }} onViewFullReport={(score, answers, weekLabel) => { setDeepData({ score, answers, weekLabel }); setView("deep-profile"); }} />}
           {view === "assessment" && <AssessmentScreen playerNum={playerNum} weekKey={weekKey} onComplete={handleAssessmentComplete} />}
-          {view === "result" && resultData && <ScoreRevealScreen score={resultData.score} answers={resultData.answers} prevScore={resultData.prevScore} onViewProfile={() => setView("profile")} onDeepProfile={() => setView("deep-profile")} />}
-          {view === "deep-profile" && resultData && <DeepProfileScreen score={resultData.score} answers={resultData.answers} onBack={() => setView("result")} />}
+          {view === "result" && resultData && <ScoreRevealScreen score={resultData.score} answers={resultData.answers} prevScore={resultData.prevScore} onViewProfile={() => setView("profile")} onDeepProfile={() => { setDeepData(null); setView("deep-profile"); }} />}
+          {view === "deep-profile" && (deepData
+            ? <DeepProfileScreen score={deepData.score} answers={deepData.answers} weekLabel={deepData.weekLabel} onBack={() => { setDeepData(null); setView("profile"); }} />
+            : resultData && <DeepProfileScreen score={resultData.score} answers={resultData.answers} onBack={() => setView("result")} />)}
           {view === "admin-login" && <AdminLogin onLogin={() => setView("admin")} />}
           {view === "admin" && <AdminDashboard onBack={() => setView(playerNum ? "profile" : "returning")} />}
         </div>
