@@ -393,6 +393,7 @@ function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey, onViewFu
   const [expandedWeek, setExpandedWeek] = useState(null);
   const [weekDetails, setWeekDetails] = useState({});
   const [fullHistory, setFullHistory] = useState([]);
+  const [teamTrend, setTeamTrend] = useState([]);
   const [showAths, setShowAths] = useState(() => {
     if (typeof window !== "undefined" && window.matchMedia("(display-mode: standalone)").matches) return false;
     return !localStorage.getItem("intentscore_aths_dismissed");
@@ -441,6 +442,29 @@ function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey, onViewFu
       setRefreshing(false);
     }
     loadTeam();
+  }, [thisWeekDone, weekKey, refreshKey]);
+
+  useEffect(() => {
+    if (!thisWeekDone) { setTeamTrend([]); return; }
+    async function loadTrend() {
+      const allSubs = await getAllSubmissions();
+      const weekMap = {};
+      for (const s of allSubs) {
+        if (!weekMap[s.week_key]) weekMap[s.week_key] = [];
+        weekMap[s.week_key].push(s.score);
+      }
+      const weeks = Object.entries(weekMap)
+        .map(([wk, s]) => ({
+          week: wk,
+          weekNum: parseInt(wk.split("W")[1]),
+          avg: Math.round(s.reduce((a, b) => a + b, 0) / s.length),
+          count: s.length,
+        }))
+        .filter(w => w.count >= MIN_SUBMISSIONS_TO_UNLOCK)
+        .sort((a, b) => a.weekNum - b.weekNum);
+      setTeamTrend(weeks);
+    }
+    loadTrend();
   }, [thisWeekDone, weekKey, refreshKey]);
 
   const streak = (() => {
@@ -585,6 +609,22 @@ function ProfileScreen({ playerNum, history, onTakeAssessment, weekKey, onViewFu
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {thisWeekDone && teamTrend.length > 1 && (
+        <div style={{ background: COLORS.dim, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: 16 }}>
+          <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: COLORS.sky, letterSpacing: 3, marginBottom: 4 }}>TEAM SEASON TREND</div>
+          <div style={{ fontSize: 11, color: COLORS.muted, lineHeight: 1.5, marginBottom: 14 }}>Team average score, week over week.</div>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 80 }}>
+            {teamTrend.map((w) => (
+              <div key={w.week} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 8, color: COLORS.muted }}>{w.avg}</div>
+                <div style={{ width: "100%", background: w.week === weekKey ? COLORS.sky : COLORS.sky + "55", borderRadius: "3px 3px 0 0", height: `${(w.avg / 30) * 80}px`, transition: "height 0.5s" }} />
+                <div style={{ fontFamily: "'DM Mono', monospace", fontSize: 7, color: COLORS.muted }}>W{w.weekNum}</div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
