@@ -1199,6 +1199,7 @@ function AdminLogin({ onLogin }) {
 
 function AdminDashboard({ onBack }) {
   const [data, setData] = useState(null);
+  const [loadError, setLoadError] = useState(null);
   const [allWeeks, setAllWeeks] = useState([]);
   const [feedback, setFeedback] = useState([]);
   const [resetting, setResetting] = useState(false);
@@ -1221,6 +1222,7 @@ function AdminDashboard({ onBack }) {
 
   useEffect(() => {
     setData(null);
+    setLoadError(null);
     async function load() {
       const weekSubs = await getWeekSubmissions(selectedWeekKey);
       const count = weekSubs.length;
@@ -1259,7 +1261,10 @@ function AdminDashboard({ onBack }) {
       const fb = await getWeekFeedback(selectedWeekKey);
       setFeedback(fb);
     }
-    load();
+    load().catch((err) => {
+      console.error("Admin dashboard load failed:", err);
+      setLoadError(err?.message || "Failed to load dashboard data.");
+    });
   }, [selectedWeekKey]);
 
   return (
@@ -1272,7 +1277,13 @@ function AdminDashboard({ onBack }) {
         <button onClick={onBack} style={{ background: "none", border: `1px solid ${COLORS.border}`, borderRadius: 8, padding: "6px 12px", color: COLORS.muted, fontSize: 11, cursor: "pointer", fontFamily: "'DM Mono', monospace" }}>← BACK</button>
       </div>
 
-      {!data ? <div style={{ color: COLORS.muted, fontSize: 13 }}>Loading...</div> : (
+      {loadError ? (
+        <div style={{ background: COLORS.dim, border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: 20, color: COLORS.muted, fontSize: 13, fontFamily: "'DM Mono', monospace" }}>
+          <div style={{ color: "#F5A623", fontSize: 11, letterSpacing: 2, marginBottom: 8 }}>COULD NOT LOAD DATA</div>
+          <div style={{ lineHeight: 1.5 }}>{loadError}</div>
+          <div style={{ marginTop: 12, fontSize: 11, color: COLORS.muted }}>If this persists, the database connection (Supabase env vars) may be misconfigured in this deployment.</div>
+        </div>
+      ) : !data ? <div style={{ color: COLORS.muted, fontSize: 13 }}>Loading...</div> : (
         <>
           <div style={{ background: COLORS.dim, border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: 20 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
